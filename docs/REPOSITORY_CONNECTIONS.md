@@ -2,24 +2,19 @@
 
 This repository intentionally does not contain Azure credentials or a hand-built Azure deployment workflow.
 
-For each real Sentinel workspace:
+## Branch model
 
-1. Create the Microsoft Sentinel repository connection to this GitHub repository.
-2. Let Sentinel generate its deployment workflow.
-3. Edit that generated workflow so both its push path and deployment directory are scoped to the matching root, for example:
+- `main` = generated catalog for the team; contains all clients under `Clients/`.
+- `deploy/<client-alias>` = isolated deployable content for exactly one Sentinel workspace.
 
-```text
-Clients/client-a/**
-```
+Never connect a customer Sentinel workspace to `main`.
 
-and:
+## For each real Sentinel workspace
 
-```text
-${{ github.workspace }}/Clients/client-a
-```
+1. Confirm `deploy/<client-alias>` exists and contains only that client's intended `Solutions/...` content.
+2. Create the Microsoft Sentinel repository connection to this repository and that specific deployment branch.
+3. Select Analytics rules as the content type.
+4. Let Sentinel create its workflow on that branch.
+5. Keep the generated workflow and `.sentinel` state intact. The source publisher updates only `Solutions/` on existing deployment branches.
 
-4. Repeat for the other workspaces using different client roots.
-
-This provides centralized generated content while preventing a change for one client from being deployed to every Sentinel workspace.
-
-Before doing this, replace the five `demo-client-*` roots in the source project with verified client aliases and rule assignments.
+The branch boundary exists because Microsoft Sentinel deploys repository content when a connection is created; it avoids relying on a folder-scope customization that would only be available after the initial workflow is generated.
