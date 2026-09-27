@@ -1,0 +1,75 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workspace": {
+      "type": "String",
+      "metadata": {
+        "description": "Microsoft Sentinel Log Analytics workspace name"
+      }
+    }
+  },
+  "resources": [
+    {
+      "id": "[concat(resourceId('Microsoft.OperationalInsights/workspaces/providers', parameters('workspace'), 'Microsoft.SecurityInsights'),'/alertRules/0f4e1da3-d52e-4ec1-b8eb-a937f57d87a1')]",
+      "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/0f4e1da3-d52e-4ec1-b8eb-a937f57d87a1')]",
+      "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+      "apiVersion": "2025-09-01",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "FortiGate VPN Authentication Failure",
+        "description": "Detects a FortiGate event representing a failed VPN authentication. This is a disposable Detection-as-Code pipeline sample and is not intended to be enabled in production without validating the customer's FortiGate event values and fields.",
+        "severity": "Medium",
+        "enabled": false,
+        "query": "// OFFLINE DEMO COMPILER OUTPUT - production CI uses pySigma/sigma-cli\nCommonSecurityLog\n| where (DeviceVendor =~ \"Fortinet\") and (DeviceProduct contains \"FortiGate\") and (Activity contains \"vpn\") and (EventOutcome =~ \"failure\")",
+        "queryFrequency": "PT5M",
+        "queryPeriod": "PT5M",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT5H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "CredentialAccess"
+        ],
+        "techniques": [
+          "1110"
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "SingleAlert"
+        },
+        "incidentConfiguration": {
+          "createIncident": true,
+          "groupingConfiguration": {
+            "enabled": false,
+            "reopenClosedIncident": false,
+            "lookbackDuration": "PT5H",
+            "matchingMethod": "AllEntities",
+            "groupByEntities": [],
+            "groupByAlertDetails": [],
+            "groupByCustomDetails": []
+          }
+        },
+        "entityMappings": [
+          {
+            "entityType": "IP",
+            "fieldMappings": [
+              {
+                "identifier": "Address",
+                "columnName": "SourceIP"
+              }
+            ]
+          },
+          {
+            "entityType": "Account",
+            "fieldMappings": [
+              {
+                "identifier": "Name",
+                "columnName": "SourceUserName"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
