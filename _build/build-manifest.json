@@ -7,11 +7,11 @@
   },
   "clients": {
     "demo-client-01": {
-      "compilerProfile": "fortigate-commonsecuritylog",
       "rules": [
         {
           "ruleId": "0f4e1da3-d52e-4ec1-b8eb-a937f57d87a1",
           "title": "FortiGate VPN Authentication Failure",
+          "compilerProfile": "fortigate-commonsecuritylog",
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.yml",
           "sourceSha256": "2b02f1d358a6804e462035eb0a609348ddd09f616f158dbe005611fb6f42e1c4",
           "artifact": "Clients/demo-client-01/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.json",
@@ -20,6 +20,7 @@
         {
           "ruleId": "b982f0b1-4980-4618-93fe-eae41d51f713",
           "title": "FortiGate Denied Remote Service Connection",
+          "compilerProfile": "fortigate-commonsecuritylog",
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.yml",
           "sourceSha256": "d2e6608a8956ef146c7db26d5edbd81745c684712f830410b138e36e9e2fa4bf",
           "artifact": "Clients/demo-client-01/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.json",
@@ -28,11 +29,11 @@
       ]
     },
     "demo-client-02": {
-      "compilerProfile": "fortigate-commonsecuritylog",
       "rules": [
         {
           "ruleId": "0f4e1da3-d52e-4ec1-b8eb-a937f57d87a1",
           "title": "FortiGate VPN Authentication Failure",
+          "compilerProfile": "fortigate-commonsecuritylog",
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.yml",
           "sourceSha256": "2b02f1d358a6804e462035eb0a609348ddd09f616f158dbe005611fb6f42e1c4",
           "artifact": "Clients/demo-client-02/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.json",
@@ -41,6 +42,7 @@
         {
           "ruleId": "b982f0b1-4980-4618-93fe-eae41d51f713",
           "title": "FortiGate Denied Remote Service Connection",
+          "compilerProfile": "fortigate-commonsecuritylog",
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.yml",
           "sourceSha256": "d2e6608a8956ef146c7db26d5edbd81745c684712f830410b138e36e9e2fa4bf",
           "artifact": "Clients/demo-client-02/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.json",
@@ -49,11 +51,11 @@
       ]
     },
     "demo-client-03": {
-      "compilerProfile": "fortigate-commonsecuritylog",
       "rules": [
         {
           "ruleId": "0f4e1da3-d52e-4ec1-b8eb-a937f57d87a1",
           "title": "FortiGate VPN Authentication Failure",
+          "compilerProfile": "fortigate-commonsecuritylog",
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.yml",
           "sourceSha256": "2b02f1d358a6804e462035eb0a609348ddd09f616f158dbe005611fb6f42e1c4",
           "artifact": "Clients/demo-client-03/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.json",
@@ -62,6 +64,7 @@
         {
           "ruleId": "b982f0b1-4980-4618-93fe-eae41d51f713",
           "title": "FortiGate Denied Remote Service Connection",
+          "compilerProfile": "fortigate-commonsecuritylog",
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.yml",
           "sourceSha256": "d2e6608a8956ef146c7db26d5edbd81745c684712f830410b138e36e9e2fa4bf",
           "artifact": "Clients/demo-client-03/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.json",
@@ -70,11 +73,11 @@
       ]
     },
     "demo-client-04": {
-      "compilerProfile": "fortigate-commonsecuritylog",
       "rules": [
         {
           "ruleId": "0f4e1da3-d52e-4ec1-b8eb-a937f57d87a1",
           "title": "FortiGate VPN Authentication Failure",
+          "compilerProfile": "fortigate-commonsecuritylog",
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.yml",
           "sourceSha256": "2b02f1d358a6804e462035eb0a609348ddd09f616f158dbe005611fb6f42e1c4",
           "artifact": "Clients/demo-client-04/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.json",
@@ -83,6 +86,7 @@
         {
           "ruleId": "b982f0b1-4980-4618-93fe-eae41d51f713",
           "title": "FortiGate Denied Remote Service Connection",
+          "compilerProfile": "fortigate-commonsecuritylog",
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.yml",
           "sourceSha256": "d2e6608a8956ef146c7db26d5edbd81745c684712f830410b138e36e9e2fa4bf",
           "artifact": "Clients/demo-client-04/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.json",
@@ -91,11 +95,11 @@
       ]
     },
     "demo-client-05": {
-      "compilerProfile": "fortigate-commonsecuritylog",
       "rules": [
         {
           "ruleId": "0f4e1da3-d52e-4ec1-b8eb-a937f57d87a1",
           "title": "FortiGate VPN Authentication Failure",
+          "compilerProfile": "fortigate-commonsecuritylog",
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.yml",
           "sourceSha256": "2b02f1d358a6804e462035eb0a609348ddd09f616f158dbe005611fb6f42e1c4",
           "artifact": "Clients/demo-client-05/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.json",
@@ -104,6 +108,7 @@
         {
           "ruleId": "b982f0b1-4980-4618-93fe-eae41d51f713",
           "title": "FortiGate Denied Remote Service Connection",
+          "compilerProfile": "fortigate-commonsecuritylog",
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.yml",
           "sourceSha256": "d2e6608a8956ef146c7db26d5edbd81745c684712f830410b138e36e9e2fa4bf",
           "artifact": "Clients/demo-client-05/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.json",

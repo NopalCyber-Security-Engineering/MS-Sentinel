@@ -15,6 +15,6 @@ Never connect a customer Sentinel workspace to `main`.
 2. Create the Microsoft Sentinel repository connection to this repository and that specific deployment branch.
 3. Select Analytics rules as the content type.
 4. Let Sentinel create its workflow on that branch.
-5. Keep the generated workflow and `.sentinel` state intact. The source publisher updates only `Solutions/` on existing deployment branches.
+5. Keep the Sentinel-generated GitHub workflow intact. The source publisher updates only `Solutions/` on existing deployment branches and preserves all other branch files.
 
 The branch boundary exists because Microsoft Sentinel deploys repository content when a connection is created; it avoids relying on a folder-scope customization that would only be available after the initial workflow is generated.
