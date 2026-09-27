@@ -1,0 +1,75 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workspace": {
+      "type": "String",
+      "metadata": {
+        "description": "Microsoft Sentinel Log Analytics workspace name"
+      }
+    }
+  },
+  "resources": [
+    {
+      "id": "[concat(resourceId('Microsoft.OperationalInsights/workspaces/providers', parameters('workspace'), 'Microsoft.SecurityInsights'),'/alertRules/b982f0b1-4980-4618-93fe-eae41d51f713')]",
+      "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/b982f0b1-4980-4618-93fe-eae41d51f713')]",
+      "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+      "apiVersion": "2025-09-01",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "FortiGate Denied Remote Service Connection",
+        "description": "Detects FortiGate denied traffic to common remote administration service ports. This is a disposable Detection-as-Code pipeline sample and is not intended to be enabled in production without validating the customer's policy and traffic.",
+        "severity": "Low",
+        "enabled": false,
+        "query": "// OFFLINE DEMO COMPILER OUTPUT - production CI uses pySigma/sigma-cli\nCommonSecurityLog\n| where (DeviceVendor =~ \"Fortinet\") and (DeviceProduct contains \"FortiGate\") and (SimplifiedDeviceAction =~ \"Deny\") and (DestinationPort == 22 or DestinationPort == 3389 or DestinationPort == 5985 or DestinationPort == 5986)",
+        "queryFrequency": "PT5M",
+        "queryPeriod": "PT5M",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT5H",
+        "suppressionEnabled": false,
+        "tactics": [
+          "LateralMovement"
+        ],
+        "techniques": [
+          "1021"
+        ],
+        "eventGroupingSettings": {
+          "aggregationKind": "SingleAlert"
+        },
+        "incidentConfiguration": {
+          "createIncident": true,
+          "groupingConfiguration": {
+            "enabled": false,
+            "reopenClosedIncident": false,
+            "lookbackDuration": "PT5H",
+            "matchingMethod": "AllEntities",
+            "groupByEntities": [],
+            "groupByAlertDetails": [],
+            "groupByCustomDetails": []
+          }
+        },
+        "entityMappings": [
+          {
+            "entityType": "IP",
+            "fieldMappings": [
+              {
+                "identifier": "Address",
+                "columnName": "SourceIP"
+              }
+            ]
+          },
+          {
+            "entityType": "IP",
+            "fieldMappings": [
+              {
+                "identifier": "Address",
+                "columnName": "DestinationIP"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
