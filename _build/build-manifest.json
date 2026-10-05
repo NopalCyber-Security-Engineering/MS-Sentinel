@@ -1,6 +1,6 @@
 {
   "formatVersion": 1,
-  "compiler": "offline-demo",
+  "compiler": "pysigma",
   "safeDefaults": {
     "rulesEnabled": false,
     "publishEnabledByDefault": false
@@ -13,9 +13,9 @@
           "title": "FortiGate VPN Authentication Failure",
           "compilerProfile": "fortigate-commonsecuritylog",
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.yml",
-          "sourceSha256": "2b02f1d358a6804e462035eb0a609348ddd09f616f158dbe005611fb6f42e1c4",
+          "sourceSha256": "e117068ac153c2853d90de0d0f4fbc3858c6d40b3d563aa5d33afa92601fe3d3",
           "artifact": "Clients/demo-client-01/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.json",
-          "artifactSha256": "eeb9bd4767818e0b3c26ef22c24fe4ddc76d8bc4a2e5012cb9b845b04a0cff22"
+          "artifactSha256": "64b1af64ff11ee2a954a482e9fbaefb969f5b49d6f212a58209b70281180a899"
         },
         {
           "ruleId": "b982f0b1-4980-4618-93fe-eae41d51f713",
@@ -24,7 +24,7 @@
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.yml",
           "sourceSha256": "d2e6608a8956ef146c7db26d5edbd81745c684712f830410b138e36e9e2fa4bf",
           "artifact": "Clients/demo-client-01/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.json",
-          "artifactSha256": "d3396cdf23d5febbaa586b3b41e7d78d5a93b36e9568b2080e7acffe19eb1f4f"
+          "artifactSha256": "43a9c6b8af79dd26cc834e0cc30655bfb7cb6814ca9d9dcfe1ce4bb94dc860f1"
         }
       ]
     },
@@ -35,9 +35,9 @@
           "title": "FortiGate VPN Authentication Failure",
           "compilerProfile": "fortigate-commonsecuritylog",
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.yml",
-          "sourceSha256": "2b02f1d358a6804e462035eb0a609348ddd09f616f158dbe005611fb6f42e1c4",
+          "sourceSha256": "e117068ac153c2853d90de0d0f4fbc3858c6d40b3d563aa5d33afa92601fe3d3",
           "artifact": "Clients/demo-client-02/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.json",
-          "artifactSha256": "eeb9bd4767818e0b3c26ef22c24fe4ddc76d8bc4a2e5012cb9b845b04a0cff22"
+          "artifactSha256": "64b1af64ff11ee2a954a482e9fbaefb969f5b49d6f212a58209b70281180a899"
         },
         {
           "ruleId": "b982f0b1-4980-4618-93fe-eae41d51f713",
@@ -46,7 +46,7 @@
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.yml",
           "sourceSha256": "d2e6608a8956ef146c7db26d5edbd81745c684712f830410b138e36e9e2fa4bf",
           "artifact": "Clients/demo-client-02/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.json",
-          "artifactSha256": "d3396cdf23d5febbaa586b3b41e7d78d5a93b36e9568b2080e7acffe19eb1f4f"
+          "artifactSha256": "43a9c6b8af79dd26cc834e0cc30655bfb7cb6814ca9d9dcfe1ce4bb94dc860f1"
         }
       ]
     },
@@ -57,9 +57,9 @@
           "title": "FortiGate VPN Authentication Failure",
           "compilerProfile": "fortigate-commonsecuritylog",
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.yml",
-          "sourceSha256": "2b02f1d358a6804e462035eb0a609348ddd09f616f158dbe005611fb6f42e1c4",
+          "sourceSha256": "e117068ac153c2853d90de0d0f4fbc3858c6d40b3d563aa5d33afa92601fe3d3",
           "artifact": "Clients/demo-client-03/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.json",
-          "artifactSha256": "eeb9bd4767818e0b3c26ef22c24fe4ddc76d8bc4a2e5012cb9b845b04a0cff22"
+          "artifactSha256": "64b1af64ff11ee2a954a482e9fbaefb969f5b49d6f212a58209b70281180a899"
         },
         {
           "ruleId": "b982f0b1-4980-4618-93fe-eae41d51f713",
@@ -68,7 +68,7 @@
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.yml",
           "sourceSha256": "d2e6608a8956ef146c7db26d5edbd81745c684712f830410b138e36e9e2fa4bf",
           "artifact": "Clients/demo-client-03/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.json",
-          "artifactSha256": "d3396cdf23d5febbaa586b3b41e7d78d5a93b36e9568b2080e7acffe19eb1f4f"
+          "artifactSha256": "43a9c6b8af79dd26cc834e0cc30655bfb7cb6814ca9d9dcfe1ce4bb94dc860f1"
         }
       ]
     },
@@ -79,9 +79,9 @@
           "title": "FortiGate VPN Authentication Failure",
           "compilerProfile": "fortigate-commonsecuritylog",
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.yml",
-          "sourceSha256": "2b02f1d358a6804e462035eb0a609348ddd09f616f158dbe005611fb6f42e1c4",
+          "sourceSha256": "e117068ac153c2853d90de0d0f4fbc3858c6d40b3d563aa5d33afa92601fe3d3",
           "artifact": "Clients/demo-client-04/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.json",
-          "artifactSha256": "eeb9bd4767818e0b3c26ef22c24fe4ddc76d8bc4a2e5012cb9b845b04a0cff22"
+          "artifactSha256": "64b1af64ff11ee2a954a482e9fbaefb969f5b49d6f212a58209b70281180a899"
         },
         {
           "ruleId": "b982f0b1-4980-4618-93fe-eae41d51f713",
@@ -90,7 +90,7 @@
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.yml",
           "sourceSha256": "d2e6608a8956ef146c7db26d5edbd81745c684712f830410b138e36e9e2fa4bf",
           "artifact": "Clients/demo-client-04/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.json",
-          "artifactSha256": "d3396cdf23d5febbaa586b3b41e7d78d5a93b36e9568b2080e7acffe19eb1f4f"
+          "artifactSha256": "43a9c6b8af79dd26cc834e0cc30655bfb7cb6814ca9d9dcfe1ce4bb94dc860f1"
         }
       ]
     },
@@ -101,9 +101,9 @@
           "title": "FortiGate VPN Authentication Failure",
           "compilerProfile": "fortigate-commonsecuritylog",
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.yml",
-          "sourceSha256": "2b02f1d358a6804e462035eb0a609348ddd09f616f158dbe005611fb6f42e1c4",
+          "sourceSha256": "e117068ac153c2853d90de0d0f4fbc3858c6d40b3d563aa5d33afa92601fe3d3",
           "artifact": "Clients/demo-client-05/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_vpn_authentication_failure.json",
-          "artifactSha256": "eeb9bd4767818e0b3c26ef22c24fe4ddc76d8bc4a2e5012cb9b845b04a0cff22"
+          "artifactSha256": "64b1af64ff11ee2a954a482e9fbaefb969f5b49d6f212a58209b70281180a899"
         },
         {
           "ruleId": "b982f0b1-4980-4618-93fe-eae41d51f713",
@@ -112,7 +112,7 @@
           "source": "Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.yml",
           "sourceSha256": "d2e6608a8956ef146c7db26d5edbd81745c684712f830410b138e36e9e2fa4bf",
           "artifact": "Clients/demo-client-05/Solutions/Fortinet FortiGate/Analytic Rules/fortigate_denied_remote_service_connection.json",
-          "artifactSha256": "d3396cdf23d5febbaa586b3b41e7d78d5a93b36e9568b2080e7acffe19eb1f4f"
+          "artifactSha256": "43a9c6b8af79dd26cc834e0cc30655bfb7cb6814ca9d9dcfe1ce4bb94dc860f1"
         }
       ]
     }
