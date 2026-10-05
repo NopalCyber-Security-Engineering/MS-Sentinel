@@ -18,10 +18,10 @@
       "kind": "Scheduled",
       "properties": {
         "displayName": "FortiGate VPN Authentication Failure",
-        "description": "Detects a FortiGate event representing a failed VPN authentication. This is a disposable Detection-as-Code pipeline sample and is not intended to be enabled in production without validating the customer's FortiGate event values and fields.",
+        "description": "Detects a FortiGate event representing a failed VPN authentication. TEST TEXT. This is a disposable Detection-as-Code pipeline sample and is not intended to be enabled in production without validating the customer's FortiGate event values and fields.Office GitHub App publishing verification.",
         "severity": "Medium",
         "enabled": false,
-        "query": "// OFFLINE DEMO COMPILER OUTPUT - production CI uses pySigma/sigma-cli\nCommonSecurityLog\n| where (DeviceVendor =~ \"Fortinet\") and (DeviceProduct contains \"FortiGate\") and (Activity contains \"vpn\") and (EventOutcome =~ \"failure\")",
+        "query": "CommonSecurityLog\n| where DeviceVendor =~ \"Fortinet\" and DeviceProduct contains \"FortiGate\" and Activity contains \"vpn\" and EventOutcome =~ \"failure\"",
         "queryFrequency": "PT5M",
         "queryPeriod": "PT5M",
         "triggerOperator": "GreaterThan",
