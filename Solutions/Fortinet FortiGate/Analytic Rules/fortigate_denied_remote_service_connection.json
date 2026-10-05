@@ -21,7 +21,7 @@
         "description": "Detects FortiGate denied traffic to common remote administration service ports. This is a disposable Detection-as-Code pipeline sample and is not intended to be enabled in production without validating the customer's policy and traffic.",
         "severity": "Low",
         "enabled": false,
-        "query": "// OFFLINE DEMO COMPILER OUTPUT - production CI uses pySigma/sigma-cli\nCommonSecurityLog\n| where (DeviceVendor =~ \"Fortinet\") and (DeviceProduct contains \"FortiGate\") and (SimplifiedDeviceAction =~ \"Deny\") and (DestinationPort == 22 or DestinationPort == 3389 or DestinationPort == 5985 or DestinationPort == 5986)",
+        "query": "CommonSecurityLog\n| where DeviceVendor =~ \"Fortinet\" and DeviceProduct contains \"FortiGate\" and SimplifiedDeviceAction =~ \"Deny\" and (DestinationPort in~ (\"22\", \"3389\", \"5985\", \"5986\"))",
         "queryFrequency": "PT5M",
         "queryPeriod": "PT5M",
         "triggerOperator": "GreaterThan",
