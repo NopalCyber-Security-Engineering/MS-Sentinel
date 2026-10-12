@@ -1,0 +1,78 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-05-14T12:08:28.1063527Z",
+    "name": "[NopalCyber] AFD Classic WAF - Path Traversal Attack",
+    "native_rule_id": "a181ceb3-e771-4b57-a31d-ed4f3cac7b26",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"5a0170b6-0000-0d00-0000-6a05bb3d0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/a181ceb3-e771-4b57-a31d-ed4f3cac7b26",
+    "kind": "Scheduled",
+    "name": "a181ceb3-e771-4b57-a31d-ed4f3cac7b26",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Identifies a match for a Path Traversal based attack in the AFD WAF logs. The threshold value in the query can be changed as per your infrastructure's requirements.\nReferences: https://owasp.org/www-community/attacks/Path_Traversal",
+      "displayName": "[NopalCyber] AFD Classic WAF - Path Traversal Attack",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "URL",
+          "fieldMappings": [
+            {
+              "columnName": "URI_s",
+              "identifier": "Url"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "clientIP_s",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-05-14T12:08:28.1063527Z",
+      "query": "let Threshold = 3;\r\nAzureDiagnostics\r\n| where Category =~ \"FrontDoorWebApplicationFirewallLog\"\r\n| where action_s !in (\"Blocked\" ,\"Block\")\r\n//| where action_s =~ \"AnomalyScoring\"\r\n| where details_msg_s has \"Path Traversal Attack\"\r\n| parse details_data_s with MessageText \"Matched Data:\" MatchedData \"AND \" * \"table_name FROM \" TableName \" \" *\r\n| project trackingReference_s, host_s, requestUri_s, TimeGenerated, clientIP_s, details_matches_s, details_msg_s, details_data_s, TableName, MatchedData\r\n| join kind = inner(\r\nAzureDiagnostics\r\n| where Category =~ \"FrontDoorWebApplicationFirewallLog\"\r\n| where action_s !in (\"Blocked\" ,\"Block\")) on trackingReference_s\r\n| summarize URI_s = make_set(requestUri_s,100), Table = make_set(TableName,100), StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), TrackingReference = make_set(trackingReference_s,100), Matched_Data = make_set(MatchedData,100), Detail_Data = make_set(details_data_s,100), Detail_Message = make_set(details_msg_s,100), Total_TrackingReference = dcount(trackingReference_s) by clientIP_s, host_s, action_s\r\n| where Total_TrackingReference >= Threshold",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "High",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T1190",
+        "T0819"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

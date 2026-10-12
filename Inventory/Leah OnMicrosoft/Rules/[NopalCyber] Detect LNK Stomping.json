@@ -1,0 +1,58 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-16T07:32:29.1411987Z",
+    "name": "[NopalCyber] Detect LNK Stomping",
+    "native_rule_id": "f3c0f5cc-6374-41a3-a246-2d9395eb6850",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"30005c9e-0000-0d00-0000-68f09f8d0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/f3c0f5cc-6374-41a3-a246-2d9395eb6850",
+    "kind": "Scheduled",
+    "name": "f3c0f5cc-6374-41a3-a246-2d9395eb6850",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "A bug in the handling of LNK files, can help threat actors bypass Smart App Control security controls designed to block untrusted applications.",
+      "displayName": "[NopalCyber] Detect LNK Stomping",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-16T07:32:29.1411987Z",
+      "query": "DeviceFileEvents\r\n| where ActionType == \"FileModified\"\r\n| where FileName endswith \".lnk\"\r\n| where InitiatingProcessFileName has \"explorer.exe\"",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence",
+        "PrivilegeEscalation"
+      ],
+      "techniques": [
+        "T1547"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

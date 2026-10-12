@@ -1,0 +1,85 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2022-04-06T21:23:12.4086763Z",
+    "name": "TI map Domain entity to SecurityAlert",
+    "native_rule_id": "8ad29fe2-fc9b-499b-8e02-d2b2ed93a630",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"0000164a-0000-0d00-0000-624e04c00000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/8ad29fe2-fc9b-499b-8e02-d2b2ed93a630",
+    "kind": "Scheduled",
+    "name": "8ad29fe2-fc9b-499b-8e02-d2b2ed93a630",
+    "properties": {
+      "alertRuleTemplateName": "87890d78-3e05-43ec-9ab9-ba32f4e01250",
+      "description": "Identifies a match in SecurityAlert table from any Domain IOC from TI",
+      "displayName": "TI map Domain entity to SecurityAlert",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "HostCustomEntity",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPCustomEntity",
+              "identifier": "Address"
+            }
+          ]
+        },
+        {
+          "entityType": "URL",
+          "fieldMappings": [
+            {
+              "columnName": "URLCustomEntity",
+              "identifier": "Url"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2022-04-06T21:23:12.4086763Z",
+      "query": "let dt_lookBack = 1h;\nlet ioc_lookBack = 14d;\n//Create a list of TLDs in our threat feed for later validation\nlet list_tlds = ThreatIntelligenceIndicator\n| where TimeGenerated > ago(ioc_lookBack)\n| where isnotempty(DomainName)\n| extend parts = split(DomainName, '.')\n| extend tld = parts[(array_length(parts)-1)]\n| summarize count() by tostring(tld)\n| summarize make_list(tld);\nThreatIntelligenceIndicator\n| where TimeGenerated >= ago(ioc_lookBack) and ExpirationDateTime > now()\n| summarize LatestIndicatorTime = arg_max(TimeGenerated, *) by IndicatorId\n| where Active == true\n// Picking up only IOC's that contain the entities we want\n| where isnotempty(DomainName)\n// using innerunique to keep perf fast and result set low, we only need one match to indicate potential malicious activity that needs to be investigated\n| join kind=innerunique (\n    SecurityAlert\n    | where TimeGenerated > ago(dt_lookBack)\n    | extend MSTI = case(AlertName has \"TI map\" and VendorName == \"Microsoft\" and ProductName == 'Azure Sentinel', true, false)\n    | where MSTI == false\n    //Extract domain patterns from message\n    | extend domain = extract(\"(([a-z0-9]+(-[a-z0-9]+)*\\\\.)+[a-z]{2,})\", 1, tolower(Entities))\n    | where isnotempty(domain)\n    | extend parts = split(domain, '.')\n    //Split out the TLD\n    | extend tld = parts[(array_length(parts)-1)]\n    //Validate parsed domain by checking if the TLD is in the list of TLDs in our threat feed\n    | where tld in~ (list_tlds)\n    // Converting Entities into dynamic data type and use mv-expand to unpack the array\n    | extend EntitiesDynamicArray = parse_json(Entities) | mv-expand EntitiesDynamicArray\n    // Parsing relevant entity column extract hostname and IP address\n    | extend EntityType = tostring(parse_json(EntitiesDynamicArray).Type), EntityAddress = tostring(EntitiesDynamicArray.Address), EntityHostName = tostring(EntitiesDynamicArray.HostName)\n    | extend HostName = iif(EntityType == 'host', EntityHostName, '')\n    | extend IP_addr = iif(EntityType == 'ip', EntityAddress, '')\n    | extend Alert_TimeGenerated = TimeGenerated\n    | extend Alert_Description = Description\n) on $left.DomainName==$right.domain\n| where Alert_TimeGenerated < ExpirationDateTime\n| summarize Alert_TimeGenerated = arg_max(Alert_TimeGenerated, *) by IndicatorId, AlertName\n| project Alert_TimeGenerated, Description, ActivityGroupNames, IndicatorId, ThreatType, ExpirationDateTime, ConfidenceScore, AlertName, Alert_Description, ProviderName, AlertSeverity, ConfidenceLevel, HostName, IP_addr, Url\n| extend timestamp = Alert_TimeGenerated, HostCustomEntity = HostName, IPCustomEntity = IP_addr, URLCustomEntity = Url",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P14D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [],
+      "templateVersion": "1.2.2",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

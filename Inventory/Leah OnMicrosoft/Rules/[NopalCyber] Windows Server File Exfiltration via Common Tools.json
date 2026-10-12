@@ -1,0 +1,58 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-16T05:40:40.6150568Z",
+    "name": "[NopalCyber] Windows Server File Exfiltration via Common Tools",
+    "native_rule_id": "8006937f-5fe1-4006-a0b7-52e348cb2334",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3000fe63-0000-0d00-0000-68f0855a0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/8006937f-5fe1-4006-a0b7-52e348cb2334",
+    "kind": "Scheduled",
+    "name": "8006937f-5fe1-4006-a0b7-52e348cb2334",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule detects suspicious file write and network activity that may indicate data exfiltration from a Windows Server using common tools like curl, ftp, or powershell. It correlates file creation/modification events with outbound network connections made by known exfiltration tools within a 5-minute window. This is useful for identifying insider threats, compromised servers, and automated exfiltration scripts.",
+      "displayName": "[NopalCyber] Windows Server File Exfiltration via Common Tools",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-16T05:40:40.6150568Z",
+      "query": "let OS_info = DeviceInfo\r\n| where OSPlatform contains \"Windows Server\"\r\n| project DeviceName;\r\nlet exfilTools = dynamic([\"curl.exe\", \"ftp.exe\", \"powershell.exe\", \"certutil.exe\", \"bitsadmin.exe\", \"winscp.exe\"]);\r\nlet fileWrites = DeviceFileEvents\r\n| where ActionType in (\"FileCreated\", \"FileModified\")\r\n| project FileWriteTime = Timestamp, DeviceName, FileName, FolderPath, InitiatingProcessId, InitiatingProcessCommandLine, InitiatingProcessFileName;\r\nlet netConnections = DeviceNetworkEvents\r\n| where RemoteUrl != \"\" and RemotePort in (21, 22, 80, 443)\r\n| project NetConnectTime = Timestamp, DeviceName, RemoteUrl, RemotePort, InitiatingProcessId, InitiatingProcessCommandLine, InitiatingProcessFileName;\r\nfileWrites\r\n| join kind=inner (netConnections) on DeviceName, InitiatingProcessId\r\n| where abs(datetime_diff(\"minute\", FileWriteTime, NetConnectTime)) <= 5\r\n| where DeviceName in (OS_info)\r\n| where InitiatingProcessFileName in~ (exfilTools)\r\n| project FileWriteTime, NetConnectTime, DeviceName, FileName, FolderPath, RemoteUrl, RemotePort, InitiatingProcessFileName, InitiatingProcessCommandLine",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Exfiltration"
+      ],
+      "techniques": [
+        "T1041",
+        "T1048"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

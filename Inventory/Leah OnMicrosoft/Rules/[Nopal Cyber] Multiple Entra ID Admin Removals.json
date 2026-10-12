@@ -1,0 +1,55 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "false",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T08:55:41.8239741Z",
+    "name": "[Nopal Cyber] Multiple Entra ID Admin Removals",
+    "native_rule_id": "1faec085-f23c-4773-bc13-ed754f4c3f71",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"39003e95-0000-0d00-0000-68f5f90d0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/1faec085-f23c-4773-bc13-ed754f4c3f71",
+    "kind": "Scheduled",
+    "name": "1faec085-f23c-4773-bc13-ed754f4c3f71",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Looks for multiple users that had their admin role removed by a single user within a certain period",
+      "displayName": "[Nopal Cyber] Multiple Entra ID Admin Removals",
+      "enabled": false,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T08:55:41.8239741Z",
+      "query": " let removedAccountsThreshold = 1;\r\n  let lookback = 12h;\r\n  CloudAppEvents\r\n  | where Timestamp > ago(lookback)\r\n  | where ApplicationId == 11161 // filter relevant events category\r\n  | where ActionType in~ (\"Remove member from role.\", \"Remove eligible member from role.\")\r\n  | project RawEventData\r\n  | where RawEventData.Actor !has \"MS-PIM\"\r\n  | mv-expand modifiedPropery = RawEventData.ModifiedProperties\r\n  | where isnotempty(modifiedPropery)\r\n  | extend propertyName = modifiedPropery.Name\r\n  | where propertyName =~ \"Role.DisplayName\"\r\n  | extend roleName = modifiedPropery.OldValue\r\n  | where roleName in (\"Company Administrator\", \"Global Administrator\") // Add more roles you found interesting here\r\n  | where RawEventData.Actor has \"User\" // Validate the actor of the oepration is a user and not service principal\r\n  | extend Actor = tostring(RawEventData.Actor[0].ID), removedUserUpn = tostring(RawEventData.Target[3].ID)\r\n  | summarize removedAccounts = dcount(removedUserUpn), make_set(removedUserUpn) by Actor\r\n  | where removedAccounts > removedAccountsThreshold",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

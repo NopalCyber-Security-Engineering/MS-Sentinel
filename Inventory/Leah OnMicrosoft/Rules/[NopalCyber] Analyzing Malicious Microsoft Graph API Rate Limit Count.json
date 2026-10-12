@@ -1,0 +1,83 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T07:16:25.2692611Z",
+    "name": "[NopalCyber] Analyzing Malicious Microsoft Graph API Rate Limit Count",
+    "native_rule_id": "d050e2e3-f297-4328-b164-dd93a2570a49",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2800179c-0000-0d00-0000-68eca74a0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/d050e2e3-f297-4328-b164-dd93a2570a49",
+    "kind": "Scheduled",
+    "name": "d050e2e3-f297-4328-b164-dd93a2570a49",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection identifies malicious or suspicious Microsoft Graph API activity originating from known attacker infrastructure (proxy IPs) by analyzing Graph API rate limit counts over a 90-day period.\n\nThe query leverages Behavior Analytics logs to extract source IP addresses associated with threat intelligence indicators marked as “proxy.” It then cross-references these IPs against the Microsoft Graph Activity Logs to determine if any of them are responsible for a high volume of API calls that hit Microsoft Graph rate limits, which can be indicative of:\n\nEnumeration activity (e.g., mailbox, users, or SharePoint enumeration)\n\nToken replay or automation attempts\n\nBulk data exfiltration or reconnaissance\n\nUse of compromised app registrations / OAuth abuse\n\nBy summarizing and ranking the RateLimitedCount by AppId, resource path, and HTTP method, this detection highlights suspicious Graph API clients and operations potentially abused by adversaries",
+      "displayName": "[NopalCyber] Analyzing Malicious Microsoft Graph API Rate Limit Count",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "CloudApplication",
+          "fieldMappings": [
+            {
+              "columnName": "AppId",
+              "identifier": "AppId"
+            }
+          ]
+        },
+        {
+          "entityType": "URL",
+          "fieldMappings": [
+            {
+              "columnName": "OperationResource",
+              "identifier": "Url"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T07:16:25.2692611Z",
+      "query": "let AttackerIPs =\r\nBehaviorAnalytics\r\n| where TimeGenerated > ago(90d)\r\n| extend ThreatIntelIndicatorDescription = tostring(DevicesInsights.ThreatIntelIndicatorDescription)\r\n| where ThreatIntelIndicatorDescription contains \"proxy\"\r\n| distinct SourceIPAddress;\r\nMicrosoftGraphActivityLogs \r\n| where TimeGenerated > ago(90d) \r\n| where IPAddress has_any(AttackerIPs)\r\n| extend path = replace_string(replace_string(replace_regex(tostring(parse_url(RequestUri).Path), @'(\\/)+','//'),'v1.0/',''),'beta/','') \r\n| extend UriSegments = extract_all(@'\\/([A-z2]+|\\$batch)($|\\/|\\(|\\$)',dynamic([1]),tolower(path))\r\n| extend OperationResource = strcat_array(UriSegments,'/')| summarize RateLimitedCount=count() by AppId, OperationResource, RequestMethod \r\n| sort by RateLimitedCount desc",
+      "queryFrequency": "PT5H",
+      "queryPeriod": "PT5H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CommandAndControl",
+        "DefenseEvasion",
+        "Discovery"
+      ],
+      "techniques": [
+        "T1071",
+        "T1070",
+        "T1087",
+        "T1040",
+        "T1078"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

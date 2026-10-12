@@ -1,0 +1,88 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-04-01T09:30:02.2562494Z",
+    "name": "[NopalCyber] Axios Supply Chain Attack: Payload Execution & Registry Persistence Detection",
+    "native_rule_id": "7def49fb-4cf5-42d3-b5c1-0546624f59bd",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"8101ad10-0000-0d00-0000-69cce59b0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/7def49fb-4cf5-42d3-b5c1-0546624f59bd",
+    "kind": "Scheduled",
+    "name": "7def49fb-4cf5-42d3-b5c1-0546624f59bd",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "customDetails": {},
+      "description": "Detects indicators associated with the axios npm supply chain compromise by identifying suspicious payload execution (wt.exe in ProgramData) and persistence via the Windows Run registry key (MicrosoftUpdate). The rule triggers when either behavior is observed, providing visibility into potential post-compromise activity on Windows endpoints.",
+      "displayName": "[NopalCyber] Axios Supply Chain Attack: Payload Execution & Registry Persistence Detection",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "DeviceName",
+              "identifier": "HostName"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountName",
+              "identifier": "Name"
+            }
+          ]
+        },
+        {
+          "entityType": "File",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingProcessFileName",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": true,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "P1D",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-04-01T09:30:02.2562494Z",
+      "query": "let payload =\n    DeviceProcessEvents\n    | where FileName =~ \"wt.exe\"\n    | where FolderPath has @\"C:\\ProgramData\"\n    | extend indicator = \"axios_payload_wt_exe\"\n    | project\n        TimeGenerated,\n        ReportId,\n        DeviceId,\n        DeviceName,\n        AccountName,\n        indicator,\n        ProcessCommandLine,\n        InitiatingProcessFileName,\n        InitiatingProcessCommandLine;\nlet persistence =\n    DeviceRegistryEvents\n    | where RegistryKey has @\"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\"\n    | where RegistryKey has \"HKEY_CURRENT_USER\"\n    | where RegistryValueName =~ \"MicrosoftUpdate\"\n    | where RegistryValueData has \"system.bat\"\n    | extend indicator = \"axios_persistence_registry\"\n    | project\n        TimeGenerated,\n        ReportId,\n        DeviceId,\n        DeviceName,\n        AccountName = InitiatingProcessAccountName,\n        indicator,\n        RegistryKey,\n        RegistryValueName,\n        RegistryValueData,\n        InitiatingProcessFileName,\n        InitiatingProcessCommandLine;\nlet RemoteConnections =\n    DeviceNetworkEvents\n    | where RemoteUrl has \"sfrclak.com\"\n        or RemoteUrl has \"/6202033\"\n    | extend indicator = \"axios_persistence_registry\"\n    | project\n        TimeGenerated,\n        DeviceName,\n        ActionType,\n        InitiatingProcessFileName,\n        InitiatingProcessFolderPath,\n        InitiatingProcessSHA1,\n        InitiatingProcessSHA256,\n        InitiatingProcessAccountName,\n        InitiatingProcessCommandLine,\n        RemoteUrl,\n        RemoteIP;\nunion payload, persistence, RemoteConnections\n",
+      "queryFrequency": "PT5H",
+      "queryPeriod": "PT5H",
+      "severity": "High",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence",
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T1195"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-07T13:20:10.0971959Z",
+    "name": "[NopalCyber] Detect configuration changes made via Storage Account Keys",
+    "native_rule_id": "acb4e4c6-91d8-4a7a-9930-605dac14ff8e",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2e02f93f-0000-0d00-0000-690df20a0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/acb4e4c6-91d8-4a7a-9930-605dac14ff8e",
+    "kind": "Scheduled",
+    "name": "acb4e4c6-91d8-4a7a-9930-605dac14ff8e",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "If the storage account configuration 'Allow Blob anonymous access' is set to enabled and a container is created with anonymous read access, a threat actor could access the storage contents from the internet without any authorization.",
+      "displayName": "[NopalCyber] Detect configuration changes made via Storage Account Keys",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Caller",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "CallerIpAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-07T13:20:10.0971959Z",
+      "query": "AzureActivity\n| where TimeGenerated >= ago(1h)\n| where OperationNameValue has \"MICROSOFT.STORAGE/STORAGEACCOUNTS/WRITE\" \n| where ActivityStatusValue has \"Success\" \n| extend allowSharedKeyAccess = parse_json(tostring(parse_json(tostring(parse_json(Properties).responseBody)).properties)).allowSharedKeyAccess \n| where allowSharedKeyAccess == \"true\"\n\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "ResourceDevelopment"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

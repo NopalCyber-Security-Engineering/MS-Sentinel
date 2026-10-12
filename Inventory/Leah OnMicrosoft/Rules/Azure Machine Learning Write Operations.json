@@ -1,0 +1,91 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-08T09:00:36.7558044Z",
+    "name": "Azure Machine Learning Write Operations",
+    "native_rule_id": "2e317599-0280-4ff9-8c61-5a20bcefb053",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4c0271b3-0000-0d00-0000-690f06b50000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/2e317599-0280-4ff9-8c61-5a20bcefb053",
+    "kind": "Scheduled",
+    "name": "2e317599-0280-4ff9-8c61-5a20bcefb053",
+    "properties": {
+      "alertRuleTemplateName": "68c89998-8052-4c80-a1f6-9d81060b6d57",
+      "description": "Shows the most prevalent users who perform write operations on Azure Machine Learning resources. List the common source IP address for each of those accounts. If an operation is not from those IP addresses, it may be worthy of investigation.",
+      "displayName": "Azure Machine Learning Write Operations",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Caller",
+              "identifier": "Name"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "CallerIpAddress",
+              "identifier": "Address"
+            }
+          ]
+        },
+        {
+          "entityType": "AzureResource",
+          "fieldMappings": [
+            {
+              "columnName": "_ResourceId",
+              "identifier": "ResourceId"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-08T09:00:36.7558044Z",
+      "query": "AzureActivity\n| where ResourceProviderValue == \"MICROSOFT.MACHINELEARNINGSERVICES\"  // Filter activities related to Microsoft Machine Learning Services\n| extend SCOPE = tostring(parse_json(Authorization).scope)  // Parse Authorization scope as string\n| extend subname = split(Hierarchy, \"/\")  // Split Hierarchy to extract Subscription Name and ID\n| extend ['Subscription Name'] = subname[-2], ['Subscription ID'] = subname[-1]  // Extract Subscription Name and ID\n| extend Properties = parse_json(Properties)  // Parse Properties as JSON\n| extend Properties_entity = tostring(Properties.entity)  // Cast Properties.entity to string\n| where isnotempty(Properties_entity)  // Filter activities where Properties.entity is not empty\n// | where Properties_entity contains \"deepseek\"  // Filter activities where Properties.entity contains \"deepseek\"\n| where OperationNameValue contains \"write\"  // Filter activities where OperationNameValue contains \"write\"\n| where OperationNameValue !contains \"MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE\"  // Exclude role assignments\n| extend LLM = tostring(split(Properties_entity, \"/\")[-1])  // Extract the last segment of Properties_entity and cast it to string\n| distinct TimeGenerated, tostring(['Subscription Name']), ResourceGroup, tostring(['Subscription ID']), Caller, CallerIpAddress, OperationNameValue, LLM, _ResourceId  // Select distinct relevant fields for output\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Low",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "Execution",
+        "Impact"
+      ],
+      "techniques": [
+        "T1078",
+        "T1059",
+        "T1496"
+      ],
+      "templateVersion": "1.0.0",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-16T05:00:39.6101198Z",
+    "name": "[NopalCyber] Detect Attempts to modify Amcache.hve or SYSTEM files",
+    "native_rule_id": "e60c0c1a-507a-4a10-82b8-fa0ab55c6f8f",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"30008f50-0000-0d00-0000-68f07bf80000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/e60c0c1a-507a-4a10-82b8-fa0ab55c6f8f",
+    "kind": "Scheduled",
+    "name": "e60c0c1a-507a-4a10-82b8-fa0ab55c6f8f",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Amcache.hve is a Windows registry file that logs details about executed programs, including file paths, hashes, timestamps, and metadata. It helps reconstruct what was run on a system—even if the original file is gone. On the other hand, Shimcache is a memory-resident registry artifact that records executables seen or run by the system. It stores file paths and last modified timestamps, making it useful for tracking historical program execution—even after deletion. Attackers aware of forensic techniques could try to delete or alter these files to remove the evidences of their attacks:\n\nDeleting or wiping Amcache.hve Overwriting or tampering with the SYSTEM hive to destroy Shimcache Using tools like SDelete, cipher /w:, or direct registry access to tamper logs",
+      "displayName": "[NopalCyber] Detect Attempts to modify Amcache.hve or SYSTEM files",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-16T05:00:39.6101198Z",
+      "query": "DeviceFileEvents \r\n| where (FileName contains \"SYSTEM\" and FolderPath contains \"C:\\\\Windows\\\\System32\\\\config\\\\\") and (FileName has \"Amcache.hve\")\r\n| project TimeGenerated, DeviceName,DeviceId, FileName, FolderPath, ActionType, InitiatingProcessFileName, ReportId",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "DefenseEvasion"
+      ],
+      "techniques": [
+        "T1562"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

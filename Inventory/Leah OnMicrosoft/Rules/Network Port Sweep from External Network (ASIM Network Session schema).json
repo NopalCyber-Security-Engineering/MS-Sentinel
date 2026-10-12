@@ -1,0 +1,78 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-21T09:56:29.5444153Z",
+    "name": "Network Port Sweep from External Network (ASIM Network Session schema)",
+    "native_rule_id": "d15d70e5-32ad-4dc2-8157-728ca7f484e7",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"9e0233f5-0000-0d00-0000-692037500000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/d15d70e5-32ad-4dc2-8157-728ca7f484e7",
+    "kind": "Scheduled",
+    "name": "d15d70e5-32ad-4dc2-8157-728ca7f484e7",
+    "properties": {
+      "alertDetailsOverride": {
+        "alertDescriptionFormat": "Network Port Sweep was detection by multiple IPs",
+        "alertDisplayNameFormat": "Network Port Sweep detected on {{DstPortNumber}}"
+      },
+      "alertRuleTemplateName": "cd8faa84-4464-4b4e-96dc-b22f50c27541",
+      "customDetails": {
+        "AllDstIpAddr": "set_DstIpAddr"
+      },
+      "description": "This detection rule detects scenarios when a particular port is being scanned by multiple external sources. The rule utilize [ASIM](https://aka.ms/AboutASIM) normalization, and is applied to any source which supports the ASIM Network Session schema.",
+      "displayName": "Network Port Sweep from External Network (ASIM Network Session schema)",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "SrcIpAddr",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-21T09:56:29.5444153Z",
+      "query": "let lookback = 1h;\nlet threshold = 20;\n_Im_NetworkSession(starttime=ago(lookback),endtime=now())\n| where NetworkDirection == \"Inbound\"\n| where not(ipv4_is_private(SrcIpAddr)) // PE-175\n| summarize make_set(DstIpAddr,100) by SrcIpAddr, DstPortNumber\n| where array_length(set_DstIpAddr) > threshold\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "High",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Reconnaissance",
+        "Discovery"
+      ],
+      "techniques": [
+        "T1590",
+        "T1046"
+      ],
+      "templateVersion": "1.0.5",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

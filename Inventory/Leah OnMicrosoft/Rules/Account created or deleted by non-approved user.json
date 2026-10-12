@@ -1,0 +1,108 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-07-10T11:19:00.1772273Z",
+    "name": "Account created or deleted by non-approved user",
+    "native_rule_id": "aeafd3b5-161a-4680-b4a5-5a2d7b61e202",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3800fd21-0000-0d00-0000-686fa1a50000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/aeafd3b5-161a-4680-b4a5-5a2d7b61e202",
+    "kind": "Scheduled",
+    "name": "aeafd3b5-161a-4680-b4a5-5a2d7b61e202",
+    "properties": {
+      "alertRuleTemplateName": "6d63efa6-7c25-4bd4-a486-aa6bf50fde8a",
+      "description": "Identifies accounts that were created or deleted by a defined list of non-approved user principal names. Add to this list before running the query for accurate results.\nRef : https://docs.microsoft.com/azure/active-directory/fundamentals/security-operations-user-accounts",
+      "displayName": "Account created or deleted by non-approved user",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAppName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAppServicePrincipalId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingUserPrincipalName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "InitiatingAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAccountUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAadUserId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingIpAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-07-10T11:19:00.1772273Z",
+      "query": "// Add non-approved user principal names or apps to the list below to search for their account creation/deletion activity\n// ex: dynamic([\"UPN1\", \"upn123\"])\nlet nonapproved_users = dynamic([]);\nlet nonapproved_apps = dynamic([]);\nAuditLogs\n| where OperationName =~ \"Add user\" or OperationName =~ \"Delete user\"\n| where Result =~ \"success\"\n| extend InitiatingAppName = tostring(InitiatedBy.app.displayName)\n| extend InitiatingAppServicePrincipalId = tostring(InitiatedBy.app.servicePrincipalId)\n| extend InitiatingUserPrincipalName = tostring(InitiatedBy.user.userPrincipalName)\n| extend InitiatingAadUserId = tostring(InitiatedBy.user.id)\n| extend InitiatingIpAddress = tostring(iff(isnotempty(InitiatedBy.user.ipAddress), InitiatedBy.user.ipAddress, InitiatedBy.app.ipAddress))\n| where InitiatingUserPrincipalName has_any (nonapproved_users) or InitiatingAppName has_any (nonapproved_apps)\n| extend InitiatingAccountName = tostring(split(InitiatingUserPrincipalName, \"@\")[0]), InitiatingAccountUPNSuffix = tostring(split(InitiatingUserPrincipalName, \"@\")[1])\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T1078"
+      ],
+      "templateVersion": "1.1.1",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-06T09:52:09.7630636Z",
+    "name": "[NopalCyber] Suspicious SVG-to-Payload Correlation (Outlook & Browser Activity)",
+    "native_rule_id": "de83ebcd-0be0-4c60-9261-a74bccd3cda4",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"fb0111a4-0000-0d00-0000-690c6fca0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/de83ebcd-0be0-4c60-9261-a74bccd3cda4",
+    "kind": "Scheduled",
+    "name": "de83ebcd-0be0-4c60-9261-a74bccd3cda4",
+    "properties": {
+      "alertDetailsOverride": {
+        "alertDynamicProperties": []
+      },
+      "alertRuleTemplateName": null,
+      "description": "This rule detects a suspicious activity chain where an SVG file is created by Outlook, immediately followed by a browser downloading a potentially malicious payload (archive, executable, or script file) on the same device within a short timeframe. This pattern could indicate a social engineering attack where a user is tricked into opening a malicious SVG attachment, which then leads to the download of a secondary malicious file.",
+      "displayName": "[NopalCyber] Suspicious SVG-to-Payload Correlation (Outlook & Browser Activity)",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-06T09:52:09.7630636Z",
+      "query": "let lookback = 30d;\r\nlet Browsers = dynamic([\"chrome.exe\",\"msedge.exe\",\"firefox.exe\",\"brave.exe\",\"iexplore.exe\"]);\r\nlet PayloadPattern = @\".*(\\.zip|\\.rar|\\.7z|\\.iso|\\.img|\\.cab|\\.exe|\\.dll|\\.scr|\\.msi|\\.js|\\.vbs|\\.hta|\\.bat|\\.cmd|\\.ps1)$\";\r\n// Step 1: Detect SVG attachments saved by Outlook\r\nlet suspiciousSVGfile =\r\nDeviceFileEvents\r\n| where Timestamp > ago(lookback)\r\n| where ActionType == \"FileCreated\"\r\n| where InitiatingProcessFileName =~ \"outlook.exe\"\r\n| where FileName matches regex @\"\\.svg$\"\r\n| project SVGCreationTimeStamp = Timestamp, DeviceId, DeviceName, SVGFileName = FileName, SVGFolderPath = FolderPath, SVG_SHA256 = SHA256, InitiatingProcessAccountName;\r\n// Step 2: Detect possible payload files downloaded by browsers\r\nlet suspiciousBrowserDownloads =\r\nDeviceFileEvents\r\n| where Timestamp > ago(lookback)\r\n| where ActionType == \"FileCreated\"\r\n| where InitiatingProcessFileName in~ (Browsers)\r\n| where tolower(FileName) matches regex PayloadPattern\r\n| project DownloadTime = Timestamp, DeviceId, DeviceName, DownloadFileName = FileName, DownloadFolderPath = FolderPath, Download_SHA256 = SHA256, BrowserProcess = InitiatingProcessFileName, InitiatingProcessAccountName;\r\n// Step 3: Correlate SVG creation and payload download within 2 minutes on same device\r\nsuspiciousSVGfile\r\n| join kind=inner (suspiciousBrowserDownloads) on DeviceId\r\n| where DownloadTime between ((SVGCreationTimeStamp - 30s) .. (SVGCreationTimeStamp + 2m))\r\n| project\r\n    Timestamp = DownloadTime,\r\n    DeviceId,\r\n    DeviceName,\r\n    SVGFileName,\r\n    SVGFolderPath,\r\n    SVG_SHA256,\r\n    DownloadFileName,\r\n    DownloadFolderPath,\r\n    Download_SHA256,\r\n    BrowserProcess,\r\n    InitiatingProcessAccountName\r\n| extend AlertName = \"Potential SVG → Archive/Executable/Script Payload Chain\"\r\n| order by Timestamp desc",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P14D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "Execution"
+      ],
+      "techniques": [
+        "T1566",
+        "T1204",
+        "T1059"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T06:40:27.5527692Z",
+    "name": "[NopalCyber] Azure Role assignments to newly added guest user accounts",
+    "native_rule_id": "bc069f21-bc95-44e0-b832-b1706381cc85",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"39006b57-0000-0d00-0000-68f5d95c0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/bc069f21-bc95-44e0-b832-b1706381cc85",
+    "kind": "Scheduled",
+    "name": "bc069f21-bc95-44e0-b832-b1706381cc85",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This use case detects when newly created guest accounts in Azure Active Directory are assigned roles. It correlates AuditLogs of guest user creation with Azure Activity logs of role assignment operations, helping identify potential privilege escalation risks through unauthorized or suspicious role grants to external guest identities.",
+      "displayName": "[NopalCyber] Azure Role assignments to newly added guest user accounts",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Caller",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T06:40:27.5527692Z",
+      "query": "let newGuestAccounts = AuditLogs \r\n| where OperationName == \"Add user\" \r\n| mv-expand TargetResources = TargetResources \r\n| mv-expand  ModifiedProperties = TargetResources.modifiedProperties  \r\n| where ModifiedProperties.displayName == \"UserType\" and ModifiedProperties.newValue has \"Guest\" \r\n| summarize by tostring(TargetResources.id); \r\nAzureActivity \r\n| where OperationNameValue == \"MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE\"  \r\n| extend Properties=parse_json(Properties) \r\n| extend requestbody = parse_json(tostring(parse_json(Properties).requestbody)) \r\n| extend PrincipalId= requestbody.Properties.PrincipalId \r\n| extend RoleDefinitionId= requestbody.Properties.RoleDefinitionId \r\n| extend Scope= requestbody.Properties.Scope \r\n| extend Entity = tostring(Properties.entity) \r\n| where PrincipalId in (newGuestAccounts)  \r\n| join kind=inner ( \r\nAzureActivity \r\n| where OperationNameValue == \"MICROSOFT.AUTHORIZATION/ROLEASSIGNMENTS/WRITE\" \r\n| where ActivityStatusValue != \"Start\" | extend Entity = tostring(parse_json(Properties).entity) ) on CorrelationId,Entity,OperationNameValue \r\n| project TimeGenerated,OperationNameValue,PrincipalId,RoleDefinitionId,FinalStatus = ActivityStatusValue1, Caller, Properties",
+      "queryFrequency": "PT6H",
+      "queryPeriod": "PT6H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "PrivilegeEscalation"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

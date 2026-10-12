@@ -1,0 +1,78 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2022-04-08T18:06:33.0969954Z",
+    "name": "SSH - Potential Brute Force",
+    "native_rule_id": "e88bfa0e-cfde-475a-9ee2-46a1845f2d20",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"10002a43-0000-0d00-0000-625079a90000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/e88bfa0e-cfde-475a-9ee2-46a1845f2d20",
+    "kind": "Scheduled",
+    "name": "e88bfa0e-cfde-475a-9ee2-46a1845f2d20",
+    "properties": {
+      "alertRuleTemplateName": "e1ce0eab-10d1-4aae-863f-9a383345ba88",
+      "description": "Identifies an IP address that had 15 failed attempts to sign in via SSH in a 4 hour block during a 24 hour time period.",
+      "displayName": "SSH - Potential Brute Force",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountCustomEntity",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPCustomEntity",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2022-04-08T18:06:33.0969954Z",
+      "query": "let threshold = 15;\nSyslog\n| where SyslogMessage contains \"Failed password for invalid user\"\n| where ProcessName =~ \"sshd\" \n| parse kind=relaxed SyslogMessage with * \"invalid user\" user \" from \" ip \" port\" port \" ssh2\"\n| project user, ip, port, SyslogMessage, EventTime\n| summarize EventTimes = make_list(EventTime), PerHourCount = count() by ip, bin(EventTime, 4h), user\n| where PerHourCount > threshold\n| mvexpand EventTimes\n| extend EventTimes = tostring(EventTimes) \n| summarize StartTimeUtc = min(EventTimes), EndTimeUtc = max(EventTimes), UserList = makeset(user), sum(PerHourCount) by IPAddress = ip\n| extend UserList = tostring(UserList) \n| extend timestamp = StartTimeUtc, IPCustomEntity = IPAddress, AccountCustomEntity = UserList",
+      "queryFrequency": "PT15M",
+      "queryPeriod": "P1D",
+      "severity": "Low",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CredentialAccess"
+      ],
+      "techniques": [
+        "T1110"
+      ],
+      "templateVersion": "1.0.0",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

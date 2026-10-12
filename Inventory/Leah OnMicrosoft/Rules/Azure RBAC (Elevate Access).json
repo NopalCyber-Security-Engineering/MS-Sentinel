@@ -1,0 +1,78 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-09-14T10:00:23.6531069Z",
+    "name": "Azure RBAC (Elevate Access)",
+    "native_rule_id": "4f75d5a0-a36d-4982-8c57-da01e9f21714",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"9100d4de-0000-0d00-0000-68c6923a0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/4f75d5a0-a36d-4982-8c57-da01e9f21714",
+    "kind": "Scheduled",
+    "name": "4f75d5a0-a36d-4982-8c57-da01e9f21714",
+    "properties": {
+      "alertRuleTemplateName": "132fdff4-c044-4855-a390-c1b71e0f833b",
+      "description": "Detects when a Global Administrator elevates access to all subscriptions and management groups in a tenant. When a Global Administrator elevates access they are assigned the User Access Administrator role at root scope. This Microsoft Sentinel Analytic Rule monitors who has elevated access in your tenant so that admins can take appropriate action. [Learn more](https://learn.microsoft.com/en-us/azure/role-based-access-control/elevate-access-global-admin?tabs=azure-portal)",
+      "displayName": "Azure RBAC (Elevate Access)",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Actor",
+              "identifier": "Name"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-09-14T10:00:23.6531069Z",
+      "query": "AuditLogs\n| where Category =~ \"AzureRBACRoleManagementElevateAccess\"\n| where ActivityDisplayName =~ \"User has elevated their access to User Access Administrator for their Azure Resources\"\n| extend Actor = tostring(InitiatedBy.user.userPrincipalName)\n| extend IPAddress = tostring(InitiatedBy.user.ipAddress) \n| project\n    TimeGenerated,\n    Actor,\n    OperationName,\n    IPAddress,\n    Result,\n    LoggedByService\n",
+      "queryFrequency": "PT2H",
+      "queryPeriod": "PT2H",
+      "severity": "High",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "PrivilegeEscalation"
+      ],
+      "techniques": [
+        "T1078"
+      ],
+      "templateVersion": "1.0.0",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

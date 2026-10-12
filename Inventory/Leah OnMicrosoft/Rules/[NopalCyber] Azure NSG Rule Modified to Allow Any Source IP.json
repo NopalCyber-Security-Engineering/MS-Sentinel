@@ -1,0 +1,58 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-09-30T05:01:14.514656Z",
+    "name": "[NopalCyber] Azure NSG Rule Modified to Allow Any Source IP",
+    "native_rule_id": "0c51a4fc-b4e4-41d1-90dd-e41c41f3fcc2",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2f01c832-0000-0d00-0000-68db641a0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/0c51a4fc-b4e4-41d1-90dd-e41c41f3fcc2",
+    "kind": "Scheduled",
+    "name": "0c51a4fc-b4e4-41d1-90dd-e41c41f3fcc2",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule would help to identify if any user tried to modify Azure NSG tule to allow Any Source IP",
+      "displayName": "[NopalCyber] Azure NSG Rule Modified to Allow Any Source IP",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-09-30T05:01:14.514656Z",
+      "query": "AzureActivity\r\n| where OperationNameValue endswith 'NETWORKSECURITYGROUPS/WRITE' //can change this, linkedin turns the full operation name into a shortened link\r\n| where ActivitySubstatusValue == 'OK'\r\n| extend nsgName = split(_ResourceId, \"/\", 8)[0]\r\n| extend data = parse_json(\r\n                    dynamic_to_json(\r\n                        parse_json(\r\n                            dynamic_to_json(\r\n                                parse_json\r\n    (\r\n                                    dynamic_to_json(parse_json(Properties_d).responseBody)\r\n                                ).properties\r\n                            )\r\n                        ).securityRules.[0]\r\n                    )\r\n                ).properties\r\n| extend\r\n    description = data.description,\r\n    sourceAddress = data.sourceAddressPrefix,\r\n    port = data.destinationPortRange, \r\n    direction = data.direction,\r\n    destinationAddress = data.destinationAddressPrefix\r\n| where sourceAddress == '*' //looking for any source IP\r\n| project\r\n    TimeGenerated,\r\n    sourceAddress,\r\n    port,\r\n    direction,\r\n    destinationAddress,\r\n    nsgName,\r\n    description,\r\n    Caller,\r\n    CallerIpAddress\r\n",
+      "queryFrequency": "PT3H",
+      "queryPeriod": "PT3H",
+      "severity": "High",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "LateralMovement",
+        "PrivilegeEscalation"
+      ],
+      "techniques": [
+        "T1021"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

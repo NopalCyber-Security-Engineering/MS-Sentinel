@@ -1,0 +1,61 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T07:16:22.5328408Z",
+    "name": "[NopalCyber] Check for Entra Legacy TLS Login",
+    "native_rule_id": "f075148a-6c29-463e-9bb3-d0d8ba9954c5",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2800129c-0000-0d00-0000-68eca7460000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/f075148a-6c29-463e-9bb3-d0d8ba9954c5",
+    "kind": "Scheduled",
+    "name": "f075148a-6c29-463e-9bb3-d0d8ba9954c5",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Check for Entra Legacy TLS Login",
+      "displayName": "[NopalCyber] Check for Entra Legacy TLS Login",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T07:16:22.5328408Z",
+      "query": "SigninLogs\r\n| where TimeGenerated > ago(90d)\r\n| where ResultType == \"0\"\r\n| mv-expand todynamic(AuthenticationProcessingDetails)\r\n| where AuthenticationProcessingDetails.key has \"Legacy TLS (TLS 1.0, 1.1, 3DES)\"\r\n| where AuthenticationProcessingDetails.value has \"True\"\r\n| summarize LegacyLogin=count() by UserPrincipalName\r\n| sort by LegacyLogin desc ",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P14D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "DefenseEvasion",
+        "ResourceDevelopment",
+        "CommandAndControl"
+      ],
+      "techniques": [
+        "T1055",
+        "T1588",
+        "T1573"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T08:26:50.6124587Z",
+    "name": "[NopalCyber] Detecting Nation-State Threat Actors with Custom KQL Queries",
+    "native_rule_id": "9f5d8d08-e4ab-49c4-8032-d17a250625f4",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"39001586-0000-0d00-0000-68f5f24b0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/9f5d8d08-e4ab-49c4-8032-d17a250625f4",
+    "kind": "Scheduled",
+    "name": "9f5d8d08-e4ab-49c4-8032-d17a250625f4",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection correlates Entra Sign-in logs with Behavior Analytics data to identify user activity linked to nation-state actor IP addresses.\n\nIt first extracts IPs flagged by Identity Protection (estsNationStateIP risk event) and then looks for any associated behavior analytics activity from those IPs.\n\nThis allows security teams to track how nation-state infrastructure is being used against your tenant, helping to detect advanced targeted attacks",
+      "displayName": "[NopalCyber] Detecting Nation-State Threat Actors with Custom KQL Queries",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T08:26:50.6124587Z",
+      "query": "let NationStateIP = \r\nSigninLogs\r\n| where TimeGenerated > ago(1h)\r\n| where RiskEventTypes_V2 has \"estsNationStateIP\"\r\n| project IPAddress;\r\nBehaviorAnalytics\r\n| where SourceIPAddress has_any(NationStateIP)\r\n| project TimeGenerated, UserPrincipalName, ActivityType, \r\nSourceIPAddress, SourceIPLocation, DevicesInsights.ThreatIntelIndicatorDescription",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T1078"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

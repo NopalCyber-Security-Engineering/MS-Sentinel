@@ -1,0 +1,55 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "false",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-07T13:21:10.4053782Z",
+    "name": "[NopalCyber] Detect Spike in unauthorized attempts to enumerate containers",
+    "native_rule_id": "4777298a-3346-430e-b9fb-209f5577e4df",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2e02044b-0000-0d00-0000-690df2460000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/4777298a-3346-430e-b9fb-209f5577e4df",
+    "kind": "Scheduled",
+    "name": "4777298a-3346-430e-b9fb-209f5577e4df",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Containers or blobs in a container can be listed by a threat actor with the appropriate access rights. If access is not authorized, attempts to do so will result in error codes shown in the StatusCode field. A high number of unauthorized attempts resulting in errors would be a key indicator of suspicious activity or misconfiguration.",
+      "displayName": "[NopalCyber] Detect Spike in unauthorized attempts to enumerate containers",
+      "enabled": false,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-07T13:21:10.4053782Z",
+      "query": "union Storage* \r\n| extend StatusCodeLong = tolong(StatusCode) \r\n| where OperationName has_any (\"ListBlobs\", \"ListContainers\", \"ListFiles\", \"ListQueues\") \r\n| summarize MinTime = min(TimeGenerated), MaxTime = max(TimeGenerated), OperationCount = count(), UnauthorizedAccess = countif(StatusCodeLong >= 400), OperationNames = make_set(OperationName), ErrorStatusCodes = make_set_if(StatusCode, StatusCodeLong >= 400), StorageAccountName = make_set(AccountName) by CallerIpAddress \r\n| where UnauthorizedAccess > 15",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

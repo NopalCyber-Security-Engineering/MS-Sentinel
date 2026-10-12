@@ -1,0 +1,104 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-16T09:37:35.9526463Z",
+    "name": "[NopalCyber] Dev-0530 File Extension Rename",
+    "native_rule_id": "cc90606b-c509-4e9f-b82c-5c5fd862bfc4",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"300094ef-0000-0d00-0000-68f0bce00000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/cc90606b-c509-4e9f-b82c-5c5fd862bfc4",
+    "kind": "Scheduled",
+    "name": "cc90606b-c509-4e9f-b82c-5c5fd862bfc4",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "customDetails": {},
+      "description": "Dev-0530 actors are known to encrypt the contents of the victims device as well as renaming the file extensions. This query looks for the creation of files with .h0lyenc extension or presence of ransom note.",
+      "displayName": "[NopalCyber] Dev-0530 File Extension Rename",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "AccountDomain",
+              "identifier": "NTDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "DeviceName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "HostNameDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "FileHash",
+          "fieldMappings": [
+            {
+              "columnName": "AlgorithmCustomEntity",
+              "identifier": "Algorithm"
+            },
+            {
+              "columnName": "FileHashCustomEntity",
+              "identifier": "Value"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-16T09:37:35.9526463Z",
+      "query": " union isfuzzy=true\r\n      (DeviceFileEvents\r\n      | where ActionType == \"FileCreated\"\r\n      | where FileName endswith \".h0lyenc\" or FolderPath == \"C:\\\\FOR_DECRYPT.html\"\r\n      | summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated)\r\n          by\r\n          AccountName = InitiatingProcessAccountName, AccountDomain = InitiatingProcessAccountDomain,\r\n          DeviceName,\r\n          Type,\r\n          InitiatingProcessId,\r\n          FileName,\r\n          FolderPath,\r\n          EventType = ActionType,\r\n          Commandline = InitiatingProcessCommandLine,\r\n          InitiatingProcessFileName,\r\n          InitiatingProcessSHA256,\r\n          FileHashCustomEntity = SHA256,\r\n          AlgorithmCustomEntity = \"SHA256\"\r\n      | extend HostName = tostring(split(DeviceName, \".\")[0]), DomainIndex = toint(indexof(DeviceName, '.'))\r\n      | extend HostNameDomain = iff(DomainIndex != -1, substring(DeviceName, DomainIndex + 1), DeviceName)\r\n      ),\r\n      (imFileEvent\r\n      | where EventType == \"FileCreated\"\r\n      | where TargetFilePath endswith \".h0lyenc\" or TargetFilePath == \"C:\\\\FOR_DECRYPT.html\"\r\n      | summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated)\r\n          by\r\n          ActorUsername,\r\n          DvcHostname,\r\n          DvcDomain,\r\n          DvcId,\r\n          Type,\r\n          EventType,\r\n          FileHashCustomEntity = TargetFileSHA256,\r\n          Hash,\r\n          TargetFilePath,\r\n          Commandline = ActingProcessCommandLine,\r\n          AlgorithmCustomEntity = \"SHA256\"\r\n      | extend AccountName = tostring(split(ActorUsername, @'\\')[1]), AccountDomain = tostring(split(ActorUsername, @'\\')[0])\r\n      | extend HostName = DvcHostname, HostNameDomain = DvcDomain\r\n      | extend DeviceName = strcat(DvcHostname, \".\", DvcDomain )\r\n      )",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact",
+        "DefenseEvasion"
+      ],
+      "techniques": [
+        "T1486"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

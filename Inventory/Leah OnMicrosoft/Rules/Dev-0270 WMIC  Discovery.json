@@ -1,0 +1,94 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-08T08:41:31.5544586Z",
+    "name": "Dev-0270 WMIC  Discovery",
+    "native_rule_id": "acbd18af-54d5-44dd-b523-337540cc0600",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4b0206d8-0000-0d00-0000-690f023c0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/acbd18af-54d5-44dd-b523-337540cc0600",
+    "kind": "Scheduled",
+    "name": "acbd18af-54d5-44dd-b523-337540cc0600",
+    "properties": {
+      "alertRuleTemplateName": "6b652b4f-9810-4eec-9027-7aa88ce4db23",
+      "description": "The query below identifies dllhost.exe using WMIC to discover additional hosts and associated domains in the environment.",
+      "displayName": "Dev-0270 WMIC  Discovery",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Account",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "AccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "AccountNTDomain",
+              "identifier": "NTDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Computer",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "HostNameDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-08T08:41:31.5544586Z",
+      "query": "(union isfuzzy=true\n(SecurityEvent\n| where EventID==4688\n| where CommandLine has \"wmic computersystem get domain\" and ParentProcessName has \"dllhost.exe\"\n| project TimeGenerated, Computer, Account, AccountDomain, ProcessName, ProcessNameFullPath = NewProcessName, EventID, Activity, CommandLine, EventSourceName, Type\n),\n(DeviceProcessEvents \n| where ProcessCommandLine has \"wmic computersystem get domain\" and InitiatingProcessFileName =~ \"dllhost.exe\" and InitiatingProcessCommandLine has \"dllhost.exe\"\n| extend Account = strcat(InitiatingProcessAccountDomain, @'\\', InitiatingProcessAccountName), Computer = DeviceName\n)\n)\n| extend HostName = tostring(split(Computer, \".\")[0]), DomainIndex = toint(indexof(Computer, '.'))\n| extend HostNameDomain = iff(DomainIndex != -1, substring(Computer, DomainIndex + 1), Computer)\n| extend AccountName = tostring(split(Account, @'\\')[1]), AccountNTDomain = tostring(split(Account, @'\\')[0])\n",
+      "queryFrequency": "PT6H",
+      "queryPeriod": "PT6H",
+      "severity": "High",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Discovery"
+      ],
+      "techniques": [
+        "T1482"
+      ],
+      "templateVersion": "1.0.4",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

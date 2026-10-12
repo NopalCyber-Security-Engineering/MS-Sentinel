@@ -1,0 +1,55 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-07T13:23:17.5760275Z",
+    "name": "[NopalCyber] Detect usage of User Delegation Key to download/read Blob",
+    "native_rule_id": "90d7d1da-2fc6-49e2-b11e-7c677b166382",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2e02cd61-0000-0d00-0000-690df2c70000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/90d7d1da-2fc6-49e2-b11e-7c677b166382",
+    "kind": "Scheduled",
+    "name": "90d7d1da-2fc6-49e2-b11e-7c677b166382",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "A User Delegation SAS functions similar to a SAS but is protected with Microsoft Entra ID credentials rather than the storage account key. The creation of a User Delegation SAS is tracked as a corresponding \"GetUserDelegationKey\" log entry in StorageBlobLogs table.",
+      "displayName": "[NopalCyber] Detect usage of User Delegation Key to download/read Blob",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-07T13:23:17.5760275Z",
+      "query": "StorageBlobLogs \n| where AuthenticationType has \"DelegationSas\" \n| where OperationName has \"GetBlob\" \n| where StatusText in~ (\"Success\", \"AnonymousSuccess\", \"SASSuccess\") \n| project\n    Type,\n    TimeGenerated,\n    OperationName,\n    AccountName,\n    UserAgentHeader,\n    ObjectKey,\n    AuthenticationType,\n    StatusCode,\n    CallerIpAddress,\n    Uri\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Low",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

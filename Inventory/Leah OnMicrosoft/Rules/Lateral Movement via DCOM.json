@@ -1,0 +1,95 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-08T08:42:12.6650494Z",
+    "name": "Lateral Movement via DCOM",
+    "native_rule_id": "412882af-c28f-4978-ba2e-8acb13d4cbdb",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4b02afdf-0000-0d00-0000-690f02650000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/412882af-c28f-4978-ba2e-8acb13d4cbdb",
+    "kind": "Scheduled",
+    "name": "412882af-c28f-4978-ba2e-8acb13d4cbdb",
+    "properties": {
+      "alertRuleTemplateName": "50cbf34a-4cdd-45d7-b3f5-8b53a1d0d14f",
+      "description": "This query detects a fairly uncommon attack technique using the Windows Distributed Component Object Model (DCOM) to make a remote execution call to another computer system and gain lateral movement throughout the network.\nRef: http://thenegative.zone/incident%20response/2017/02/04/MMC20.Application-Lateral-Movement-Analysis.html",
+      "displayName": "Lateral Movement via DCOM",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Process",
+          "fieldMappings": [
+            {
+              "columnName": "CommandLine",
+              "identifier": "CommandLine"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Computer",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "DnsDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "User",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-08T08:42:12.6650494Z",
+      "query": "Event\n| where EventLog =~ \"Microsoft-Windows-Sysmon/Operational\" and EventID==1\n| parse EventData with * 'CommandLine\">' CommandLine \"<\" * 'ParentCommandLine\">' ParentCommandLine \"<\" *\n| where ParentCommandLine =~ \"C:\\\\Windows\\\\System32\\\\svchost.exe -k DcomLaunch\" and CommandLine =~ \"C:\\\\Windows\\\\System32\\\\mmc.exe -Embedding\"\n| parse EventData with * 'ProcessGuid\">' ProcessGuid \"<\" * 'Image\">' Image \"<\" * 'Description\">' Description \"<\" * 'CurrentDirectory\">' CurrentDirectory \"<\" * 'User\">' User \"<\" * 'LogonGuid\">' LogonGuid \"<\" * 'ParentProcessGuid\">' ParentProcessGuid \"<\" * 'ParentImage\">' ParentImage \"<\" * 'ParentCommandLine\">' ParentCommandLine \"<\" * 'ParentUser\">' ParentUser \"<\" *\n| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated) by EventID, Computer, User, ParentImage, ParentProcessGuid, ParentCommandLine, ParentUser, Image, ProcessGuid, CommandLine, Description\n| extend HostName = iif(Computer has '.',substring(Computer,0,indexof(Computer,'.')),Computer) , DnsDomain = iif(Computer has '.',substring(Computer,indexof(Computer,'.')+1),'')\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "Medium",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "LateralMovement"
+      ],
+      "techniques": [
+        "T1021"
+      ],
+      "templateVersion": "1.0.3",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

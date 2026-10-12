@@ -1,0 +1,81 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T11:45:36.3984764Z",
+    "name": "[NopalCyber] Detect Unusual user activity from an unusual location",
+    "native_rule_id": "8b121234-e9cb-4968-ab64-4f1f135b037f",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"29005f3b-0000-0d00-0000-68ece6610000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/8b121234-e9cb-4968-ab64-4f1f135b037f",
+    "kind": "Scheduled",
+    "name": "8b121234-e9cb-4968-ab64-4f1f135b037f",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule identifies unusual activity from locations not previously observed for a user within a defined lookback period. It leverages Microsoft Entra ID (Azure AD) Behavior Analytics and SigninLogs to baseline legitimate user locations and filter out trusted devices/IPs. The rule flags unusual activity where the source IP location is new for the user and exceeds a configurable threshold of 'unusual' behavior indicators, while also excluding specified trusted countries.",
+      "displayName": "[NopalCyber] Detect Unusual user activity from an unusual location",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPAddress",
+              "identifier": "Address"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "FullName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T11:45:36.3984764Z",
+      "query": "let baselineUnusualEvents = 10; //adjust this, lower = more sensitive/more results\r\nlet lookbackTime = ago(14d); //lookback time, generally the longer this is, the more records are checked against legit sources so results in less hits.\r\nlet RecentUserLocations = BehaviorAnalytics\r\n| where TimeGenerated >= lookbackTime\r\n| extend Country = case(\r\n    SourceIPLocation matches regex @\".*,\\s*(.+)$\", extract(@\".*,\\s*(.+)$\", 1, SourceIPLocation),\r\n    SourceIPLocation matches regex @\"^[^,]+$\", SourceIPLocation,\r\n    \"Unknown\"\r\n)\r\n| summarize RecentCountries = make_set(Country) by UserPrincipalName;\r\nlet LegitimateSignIns = SigninLogs // identify legitimate IPs based on user sign in activity\r\n| where TimeGenerated >= lookbackTime\r\n| where (isnotempty(DeviceDetail.deviceId) or isnotempty(MfaDetail.authMethod) or DeviceDetail.trustType has_any (\"Azure AD Joined\", \"Azure AD Registered\")) // Trusted devices and IPs\r\n| where ResultType == 0\r\n| summarize by UserPrincipalName, IPAddress;\r\nBehaviorAnalytics\r\n| extend ParsedInsights = parse_json(ActivityInsights)\r\n| mv-expand bagexpansion=array Property = bag_keys(ParsedInsights) to typeof(string)\r\n| extend Value = tostring(ParsedInsights[Property])\r\n| where Value == \"True\"\r\n| summarize TrueFieldsList = strcat_array(make_list(Property), \", \"), TrueFieldCount = count(), \r\n    FirstSeen = min(TimeGenerated), LastSeen = max(TimeGenerated), OccurrenceCount = dcount(TimeGenerated) \r\n    by UserPrincipalName, IPAddress = SourceIPAddress, Location = SourceIPLocation\r\n| where TrueFieldCount >= baselineUnusualEvents\r\n| extend Country = case(\r\n    Location matches regex @\".*,\\s*(.+)$\", extract(@\".*,\\s*(.+)$\", 1, Location),\r\n    Location matches regex @\"^[^,]+$\", Location,\r\n    \"Unknown\"\r\n)\r\n| where not(Country has_any (\"country1\", \"country2\")) // Adjust trusted countries here\r\n| join kind=leftouter RecentUserLocations on UserPrincipalName\r\n| extend CountrySeen7Days = iff(set_has_element(RecentCountries, Country), \"Yes\", \"No\")\r\n| where CountrySeen7Days == \"No\"\r\n| join kind=leftanti LegitimateSignIns on UserPrincipalName, IPAddress\r\n| project FirstSeen, LastSeen, UserPrincipalName, IPAddress, unusualActivityCount = TrueFieldCount, unusualActivityList = TrueFieldsList, Country, CountrySeen7Days",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P14D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "LateralMovement",
+        "DefenseEvasion",
+        "PrivilegeEscalation"
+      ],
+      "techniques": [
+        "T1078",
+        "T1133"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

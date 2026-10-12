@@ -1,0 +1,59 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T08:30:54.1801858Z",
+    "name": "[NopalCyber] Monitor Privilege User SSPR",
+    "native_rule_id": "4f21d278-5cd8-400a-93e6-7f22a40b2a99",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900c287-0000-0d00-0000-68f5f33e0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/4f21d278-5cd8-400a-93e6-7f22a40b2a99",
+    "kind": "Scheduled",
+    "name": "4f21d278-5cd8-400a-93e6-7f22a40b2a99",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection should monitor when privileged accounts reset their password via SSPR, because if an attacker compromises an admin account and uses SSPR, it’s a high-severity persistence action.\n\nThe query you pasted (CLI spray detection) looks like a mix-up, so here’s the right SSPR query for privileged users (based on AuditLogs)",
+      "displayName": "[NopalCyber] Monitor Privilege User SSPR",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T08:30:54.1801858Z",
+      "query": "let queryperiod = 30d;\r\nlet queryfrequency = 1h;\r\nlet PrivilegeUsers = (\r\n    IdentityInfo\r\n    | where TimeGenerated > ago(queryperiod)\r\n    | mv-expand AssignedRoles\r\n    | where AssignedRoles matches regex 'Admin'\r\n    | summarize by tolower(AccountUPN));\r\nAuditLogs\r\n| where TimeGenerated > ago(queryfrequency)\r\n| where ResultDescription == \"User started self-service password reset operation.\"\r\n| extend AccountUPN = tolower(InitiatedBy.user.userPrincipalName)\r\n| extend IPAdress = InitiatedBy.user.ipAddress\r\n| where AccountUPN in (PrivilegeUsers)",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "CredentialAccess"
+      ],
+      "techniques": [
+        "T1078",
+        "T1110"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

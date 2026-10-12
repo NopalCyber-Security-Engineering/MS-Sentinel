@@ -1,0 +1,112 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-09-03T09:26:35.2493694Z",
+    "name": "Cross-tenant Access Settings Organization Outbound Direct Settings Changed",
+    "native_rule_id": "f7f07f6f-c36b-4e14-a379-5f7c654efb1a",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"d30323f4-0000-0d00-0000-68b809cb0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/f7f07f6f-c36b-4e14-a379-5f7c654efb1a",
+    "kind": "Scheduled",
+    "name": "f7f07f6f-c36b-4e14-a379-5f7c654efb1a",
+    "properties": {
+      "alertRuleTemplateName": "0101e08d-99cd-4a97-a9e0-27649c4369ad",
+      "description": "Organizations are added in the Cross-tenant Access Settings to control communication inbound or outbound for users and applications. This detection notifies when Organization Outbound Direct Settings are changed for \"Users & Groups\" and for \"Applications\".",
+      "displayName": "Cross-tenant Access Settings Organization Outbound Direct Settings Changed",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAppName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAppServicePrincipalId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingUserPrincipalName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "InitiatingAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAccountUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAadUserId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingIpAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-09-03T09:26:35.2493694Z",
+      "query": "// In User & Groups and in Applications, the following \"AccessType\" values in columns PremodifiedOutboundSettings and ModifiedOutboundSettings are interpreted accordingly\n// When Access Type in premodified outbound settings value was 1 that means that the initial access was allowed. When Access Type in premodified outbound settings value was 2 that means that the initial access was blocked.\n// When Access Type in modified outbound settings value is 1 that means that now access is allowed. When Access Type in modified outbound settings value is 2 that means that now access is blocked.\nAuditLogs\n| where OperationName has \"Update a partner cross-tenant access setting\"\n| mv-apply TargetResource = TargetResources on\n  (\n      where TargetResource.type =~ \"Policy\"\n      | extend Properties = TargetResource.modifiedProperties\n  )\n| mv-apply Property = Properties on\n  (\n      where Property.displayName =~ \"b2bDirectConnectOutbound\"\n      | extend PremodifiedOutboundSettings = trim('\"',tostring(Property.oldValue)),\n               ModifiedOutboundSettings = trim(@'\"',tostring(Property.newValue))\n  )\n| where PremodifiedOutboundSettings != ModifiedOutboundSettings\n| extend InitiatingAppName = tostring(InitiatedBy.app.displayName)\n| extend InitiatingAppServicePrincipalId = tostring(InitiatedBy.app.servicePrincipalId)\n| extend InitiatingUserPrincipalName = tostring(InitiatedBy.user.userPrincipalName)\n| extend InitiatingAadUserId = tostring(InitiatedBy.user.id)\n| extend InitiatingIpAddress = tostring(iff(isnotempty(InitiatedBy.user.ipAddress), InitiatedBy.user.ipAddress, InitiatedBy.app.ipAddress))\n| extend InitiatingAccountName = tostring(split(InitiatingUserPrincipalName, \"@\")[0]), InitiatingAccountUPNSuffix = tostring(split(InitiatingUserPrincipalName, \"@\")[1])\n",
+      "queryFrequency": "P2D",
+      "queryPeriod": "P2D",
+      "severity": "Medium",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "Persistence",
+        "Discovery"
+      ],
+      "techniques": [
+        "T1078",
+        "T1136",
+        "T1087"
+      ],
+      "templateVersion": "1.1.1",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

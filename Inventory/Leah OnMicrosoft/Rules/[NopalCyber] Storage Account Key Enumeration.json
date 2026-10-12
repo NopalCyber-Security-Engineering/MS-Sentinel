@@ -1,0 +1,79 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "false",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T09:02:59.6940353Z",
+    "name": "[NopalCyber] Storage Account Key Enumeration",
+    "native_rule_id": "b7c914ce-0cd1-4841-91eb-3cbe6aa735db",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"39004499-0000-0d00-0000-68f5fac30000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/b7c914ce-0cd1-4841-91eb-3cbe6aa735db",
+    "kind": "Scheduled",
+    "name": "b7c914ce-0cd1-4841-91eb-3cbe6aa735db",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This query identifies attackers trying to enumerate the Storage keys as well as updating roles using AzureActivity,SigninLogs\nand AuditLogs",
+      "displayName": "[NopalCyber] Storage Account Key Enumeration",
+      "enabled": false,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountCustomEntity",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPCustomEntity",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T09:02:59.6940353Z",
+      "query": "SigninLogs \r\n  | where ResultType == \"0\" \r\n  | where AppDisplayName !in (\"Office 365 Exchange Online\", \"Skype for Business Online\", \"Office 365 SharePoint Online\")\r\n  | project  SuccessLogonTime = TimeGenerated,UserPrincipalName, IPAddress,SuccessAppDisplayName = AppDisplayName\r\n  |  join kind=inner\r\n  (\r\n  AzureActivity\r\n  | where tolower(OperationNameValue) endswith \"listkeys/action\"\r\n  | where ActivityStatus =~ \"Succeeded\"\r\n  | project CallerIpAddress, _ResourceId, SubscriptionId, ActivityStatus, Category, Authorization,OperationName\r\n  )\r\n  on $left.IPAddress == $right. CallerIpAddress\r\n  | project SubscriptionId, ActivityStatus, IPAddress, OperationName, UserPrincipalName\r\n  | join kind=inner \r\n  (\r\n  AuditLogs\r\n  | where LoggedByService =~ \"Core Directory\"\r\n  | where Category =~ \"RoleManagement\"\r\n  | extend IpAddress = case(\r\n   isnotempty(tostring(parse_json(tostring(InitiatedBy.user)).ipAddress)) and tostring(parse_json(tostring(InitiatedBy.user)).ipAddress) != 'null', tostring(parse_json(tostring(InitiatedBy.user)).ipAddress), \r\n  isnotempty(tostring(parse_json(tostring(InitiatedBy.app)).ipAddress)) and tostring(parse_json(tostring(InitiatedBy.app)).ipAddress) != 'null', tostring(parse_json(tostring(InitiatedBy.app)).ipAddress),'Not Available')\r\n  | extend InitiatedBy = iff(isnotempty(tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)), \r\n    tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName), tostring(parse_json(tostring(InitiatedBy.app)).displayName)), UserRoles = tostring(parse_json(tostring(InitiatedBy.user)).ipAddress)\r\n  | extend TargetResourceName = tolower(tostring(TargetResources.[0].displayName))  \r\n  ) \r\n  on $left. IPAddress == $right. IpAddress\r\n  | summarize count () by TimeGenerated,IPCustomEntity=IpAddress,UserRoles,AccountCustomEntity=InitiatedBy,TargetResourceName",
+      "queryFrequency": "PT6H",
+      "queryPeriod": "PT6H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "LateralMovement"
+      ],
+      "techniques": [
+        "T1566",
+        "T1570"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-08T08:59:00.1751567Z",
+    "name": "WDigest downgrade attack",
+    "native_rule_id": "7a213164-4946-4bec-8581-e1da0bddfcbf",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4c0201a1-0000-0d00-0000-690f06540000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/7a213164-4946-4bec-8581-e1da0bddfcbf",
+    "kind": "Scheduled",
+    "name": "7a213164-4946-4bec-8581-e1da0bddfcbf",
+    "properties": {
+      "alertRuleTemplateName": "f6502545-ae3a-4232-a8b0-79d87e5c98d7",
+      "description": "When the WDigest Authentication protocol is enabled, plain text passwords are stored in the Local Security Authority Subsystem Service (LSASS) exposing them to theft. This setting will prevent WDigest from storing credentials in memory.\nRef: https://www.stigviewer.com/stig/windows_7/2016-12-19/finding/V-72753",
+      "displayName": "WDigest downgrade attack",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "RegistryKey",
+          "fieldMappings": [
+            {
+              "columnName": "TargetObject",
+              "identifier": "Key"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Computer",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "DnsDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-08T08:59:00.1751567Z",
+      "query": "Event\n| where EventLog =~ \"Microsoft-Windows-Sysmon/Operational\" and EventID in (13)\n| parse EventData with * 'TargetObject\">' TargetObject \"<\" * 'Details\">' Details \"<\" * \n| where TargetObject=~\"HKLM\\\\System\\\\CurrentControlSet\\\\Control\\\\SecurityProviders\\\\WDigest\\\\UseLogonCredential\" and Details !=\"DWORD (0x00000000)\"\n| summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated) by EventID, Computer,  TargetObject, Details\n| extend HostName = iif(Computer has '.',substring(Computer,0,indexof(Computer,'.')),Computer) , DnsDomain = iif(Computer has '.',substring(Computer,indexof(Computer,'.')+1),'')\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "Medium",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CredentialAccess"
+      ],
+      "techniques": [
+        "T1003"
+      ],
+      "templateVersion": "1.0.3",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

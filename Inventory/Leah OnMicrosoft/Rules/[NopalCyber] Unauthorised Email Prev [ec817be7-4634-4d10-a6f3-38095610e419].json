@@ -1,0 +1,55 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-07T13:18:48.6164618Z",
+    "name": "[NopalCyber] Unauthorised Email Preview or Download by Microsoft 365 Admin/User",
+    "native_rule_id": "ec817be7-4634-4d10-a6f3-38095610e419",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2e02bb30-0000-0d00-0000-690df1b90000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/ec817be7-4634-4d10-a6f3-38095610e419",
+    "kind": "Scheduled",
+    "name": "ec817be7-4634-4d10-a6f3-38095610e419",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "In Microsoft 365 environments, administrators and certain privileged users can access mailbox content through actions such as email preview or message download. While these capabilities are often used for legitimate purposes — such as security investigations, eDiscovery, or incident response — they also represent a potential insider threat or privacy violation risk if misused.\n\nUnauthorized access to mailbox data can expose confidential communications, sensitive attachments, or personally identifiable information (PII). Therefore, it’s crucial to continuously monitor when administrators perform actions like:\nGetMailPreviewUrl – viewing an email’s content through a preview link\nDownloadEMail – exporting or downloading a full email message\n\nIf these actions are not tied to a legitimate investigation or security workflow, they could indicate abuse of administrative privileges or data exfiltration attempts.",
+      "displayName": "[NopalCyber] Unauthorised Email Preview or Download by Microsoft 365 Admin/User",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-07T13:18:48.6164618Z",
+      "query": "let AdminMailAccess = CloudAppEvents \r\n| where ActionType == \"AdminMailAccess\"  \r\n| extend Admin_Action = parse_json(RawEventData.ExtendedProperties.[0].Name)  \r\n| extend UserMailBox = parse_json(RawEventData.ExtendedProperties.[1].Value)  \r\n| extend MessageID = parse_json(RawEventData.ExtendedProperties.[2].Value)  \r\n| where Admin_Action in (\"GetMailPreviewUrl\",\"DownloadEMail\")\r\n| extend NetworkMessageID = tostring(MessageID);\r\n// Get reported phishing/malware alerts and extract network message IDs\r\nlet ReportedPhishing = SecurityAlert \r\n| where AlertName contains \"Email reported\"\r\n| extend ExtendedProps = parse_json(ExtendedProperties)\r\n| extend Entities = parse_json(ExtendedProps.Entities)\r\n| mv-expand Entities\r\n| extend EntityType = tostring(Entities.Type)\r\n| where EntityType == \"mail-message\" // Adjust this based on your entity structure\r\n| extend NetworkMessageID = tostring(Entities.NetworkMessageId) // Adjust path as needed\r\n| where isnotempty(NetworkMessageID)\r\n| distinct NetworkMessageID;\r\n// Join to exclude legitimate downloads of reported phishing emails\r\nAdminMailAccess\r\n| join kind=leftanti ReportedPhishing on NetworkMessageID\r\n| project \r\n    TimeGenerated,\r\n    AccountDisplayName,\r\n    Admin_Action,\r\n    UserMailBox,\r\n    NetworkMessageID,\r\n    IPAddress,\r\n    UserAgent\r\n| order by TimeGenerated desc",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "PrivilegeEscalation"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-08T09:27:51.3835046Z",
+    "name": "TEARDROP memory-only dropper",
+    "native_rule_id": "1ff4e84a-1bfd-4d82-91d6-aaa4b4532c15",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4d02c8e6-0000-0d00-0000-690f0d170000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/1ff4e84a-1bfd-4d82-91d6-aaa4b4532c15",
+    "kind": "Scheduled",
+    "name": "1ff4e84a-1bfd-4d82-91d6-aaa4b4532c15",
+    "properties": {
+      "alertRuleTemplateName": "738702fd-0a66-42c7-8586-e30f0583f8fe",
+      "description": "Identifies SolarWinds TEARDROP memory-only dropper IOCs in Window's defender Exploit Guard activity\nReferences:\n- https://www.fireeye.com/blog/threat-research/2020/12/evasive-attacker-leverages-solarwinds-supply-chain-compromises-with-sunburst-backdoor.html\n- https://gist.github.com/olafhartong/71ffdd4cab4b6acd5cbcd1a0691ff82f",
+      "displayName": "TEARDROP memory-only dropper",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "DeviceName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "HostNameDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingProcessAccountUpn",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "InitiatingProcessAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingProcessAccountDomain",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "FileHash",
+          "fieldMappings": [
+            {
+              "columnName": "HashAlgorithm",
+              "identifier": "Algorithm"
+            },
+            {
+              "columnName": "InitiatingProcessSHA1",
+              "identifier": "Value"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-08T09:27:51.3835046Z",
+      "query": "DeviceEvents\n| where ActionType has \"ExploitGuardNonMicrosoftSignedBlocked\"\n| where InitiatingProcessFileName has \"svchost.exe\" and FileName has \"NetSetupSvc.dll\"\n| extend HashAlgorithm = \"SHA1\"\n| extend HostName = tostring(split(DeviceName, \".\")[0]), DomainIndex = toint(indexof(DeviceName, '.'))\n| extend HostNameDomain = iff(DomainIndex != -1, substring(DeviceName, DomainIndex + 1), DeviceName)\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "High",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Execution",
+        "Persistence",
+        "DefenseEvasion"
+      ],
+      "techniques": [
+        "T1543",
+        "T1059",
+        "T1027"
+      ],
+      "templateVersion": "1.0.6",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

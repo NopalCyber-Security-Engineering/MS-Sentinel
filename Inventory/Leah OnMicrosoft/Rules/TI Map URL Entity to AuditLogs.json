@@ -1,0 +1,103 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-08T08:51:39.0132871Z",
+    "name": "TI Map URL Entity to AuditLogs",
+    "native_rule_id": "cebf752a-13a4-4a1a-bf71-468207f2dc61",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4c020b50-0000-0d00-0000-690f049c0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/cebf752a-13a4-4a1a-bf71-468207f2dc61",
+    "kind": "Scheduled",
+    "name": "cebf752a-13a4-4a1a-bf71-468207f2dc61",
+    "properties": {
+      "alertRuleTemplateName": "9991c277-e0a1-4079-8c40-fbfca2705615",
+      "description": "This query identifies any URL indicators of compromise (IOCs) from threat intelligence (TI) by searching for matches in AuditLogs.",
+      "displayName": "TI Map URL Entity to AuditLogs",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "userPrincipalName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "AccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "AccountUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "TargetResourceDisplayName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "HostNameDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "URL",
+          "fieldMappings": [
+            {
+              "columnName": "Url",
+              "identifier": "Url"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-08T08:51:39.0132871Z",
+      "query": "let dt_lookBack = 1h;\nlet ioc_lookBack = 14d;\nlet AuditEvents = materialize(AuditLogs\n  | where TimeGenerated >= ago(dt_lookBack)\n  // Extract the URL that is contained within the JSON data\n  | extend Url = extract(\"(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\\\(\\\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)\", 1,tostring(TargetResources))\n  | extend userPrincipalName = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)\n  | extend TargetResourceDisplayName = tostring(TargetResources[0].displayName));\nlet AuditUrls = AuditEvents | distinct Url = tolower(Url) | summarize make_list(Url);\nThreatIntelIndicators\n//extract key part of kv pair\n     | extend IndicatorType = replace(@\"\\[|\\]|\\\"\"\", \"\", tostring(split(ObservableKey, \":\", 0)))\n     | where IndicatorType == \"url\"\n     | extend Url = toupper(ObservableValue)\n     | extend TrafficLightProtocolLevel = tostring(parse_json(AdditionalFields).TLPLevel)\n| where TimeGenerated >= ago(ioc_lookBack)\n| where tolower(Url) in (AuditUrls)\n| summarize LatestIndicatorTime = arg_max(TimeGenerated, *) by Id, ObservableValue\n| where IsActive and (ValidUntil > now() or isempty(ValidUntil))\n| extend Description = tostring(parse_json(Data).description)\n| where Description !contains_cs \"State: inactive;\" and Description !contains_cs \"State: falsepos;\"\n// using innerunique to keep perf fast and result set low, we only need one match to indicate potential malicious activity that needs to be investigated\n| join kind=innerunique (AuditEvents) on Url\n| where TimeGenerated < ValidUntil\n| summarize TimeGenerated = arg_max(TimeGenerated, *) by Id, Url\n| extend Description = tostring(parse_json(Data).description)\n| extend ActivityGroupNames = extract(@\"ActivityGroup:(\\S+)\", 1, tostring(parse_json(Data).labels))\n| project TimeGenerated, Description, ActivityGroupNames, Id, Type, ValidUntil, Confidence,\nOperationName, Identity, userPrincipalName, TargetResourceDisplayName, Url\n| extend AccountName = tostring(split(userPrincipalName, \"@\")[0]), AccountUPNSuffix = tostring(split(userPrincipalName, \"@\")[1])\n| extend HostName = tostring(split(TargetResourceDisplayName, \".\")[0]), DomainIndex = toint(indexof(TargetResourceDisplayName, '.'))\n| extend HostNameDomain = iff(DomainIndex != -1, substring(TargetResourceDisplayName, DomainIndex + 1), TargetResourceDisplayName)\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P14D",
+      "severity": "Medium",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CommandAndControl"
+      ],
+      "techniques": [
+        "T1071"
+      ],
+      "templateVersion": "1.2.10",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T06:32:08.9287384Z",
+    "name": "[NopalCyber] Detect Azure API spray attack",
+    "native_rule_id": "3dc7e44c-76dc-48df-8504-5096b0989e38",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"39001d55-0000-0d00-0000-68f5d7690000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/3dc7e44c-76dc-48df-8504-5096b0989e38",
+    "kind": "Scheduled",
+    "name": "3dc7e44c-76dc-48df-8504-5096b0989e38",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule detects potential API spray attacks (multiple failed requests from the same IP against Azure API Management).\nSpray attacks often aim to brute force credentials, tokens, or exploit misconfigurations in API endpoints\n\nIt looks at gateway logs from API Management over the past 1 day and flags suspicious activity where a single IP repeatedly fails requests (20 or more times) against APIs, endpoints, or operations.\n\nSpray attacks often aim to brute force credentials, tokens, or exploit misconfigurations in API endpoints",
+      "displayName": "[NopalCyber] Detect Azure API spray attack",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "CallerIpAddress",
+              "identifier": "Address"
+            }
+          ]
+        },
+        {
+          "entityType": "URL",
+          "fieldMappings": [
+            {
+              "columnName": "Url",
+              "identifier": "Url"
+            }
+          ]
+        },
+        {
+          "entityType": "URL",
+          "fieldMappings": [
+            {
+              "columnName": "BackendUrl",
+              "identifier": "Url"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T06:32:08.9287384Z",
+      "query": "let ioc_lookBack = 14d; // Look back 14 days for threat intelligence indicators\r\n// Fetch threat intelligence indicators related to IP addresses\r\nlet TIIPIndicators = ThreatIntelIndicators\r\n  //extract key part of kv pair\r\n  | extend IndicatorType = replace(@\"\\[|\\]|\\\"\"\", \"\", tostring(split(ObservableKey, \":\", 0)))\r\n  | where IndicatorType in (\"ipv4-addr\", \"ipv6-addr\", \"network-traffic\")\r\n  | extend NetworkSourceIP = ObservableValue\r\n  | extend TrafficLightProtocolLevel = tostring(parse_json(AdditionalFields).TLPLevel)\r\n  // Filter out indicators without relevant IP address fields\r\n  | where TimeGenerated >= ago(ioc_lookBack)\r\n  | where TimeGenerated >= ago(ioc_lookBack)\r\n  // Filtering out rows where the Confidence Score is less than 50 as they would not have an Alert Priority label. \r\n  | where Confidence > 50\r\n  // Select the IP entity based on availability of different IP fields\r\n  | extend TI_ipEntity = iff(isnotempty(NetworkSourceIP), NetworkSourceIP, NetworkSourceIP)\r\n  | extend TI_ipEntity = iff(isempty(TI_ipEntity) and isnotempty(NetworkSourceIP), NetworkSourceIP, TI_ipEntity)\r\n  | extend Url = iff(ObservableKey == \"url:value\", ObservableValue, \"\")\r\n  // Exclude local addresses using the ipv4_is_private operator and filtering out specific address prefixes\r\n  | where ipv4_is_private(TI_ipEntity) == false and  TI_ipEntity !startswith \"fe80\" and TI_ipEntity !startswith \"::\" and TI_ipEntity !startswith \"127.\"\r\n  | summarize LatestIndicatorTime = arg_max(TimeGenerated, *) by Id, TI_ipEntity\r\n  | where IsActive and (ValidUntil > now() or isempty(ValidUntil))\r\n  | distinct TI_ipEntity;\r\nApiManagementGatewayLogs\r\n| where TimeGenerated > ago(1d)\r\n| where IsRequestSuccess == \"false\"\r\n| where CallerIpAddress in (TIIPIndicators)\r\n| summarize Count=count() by CallerIpAddress, Url, BackendUrl, OperationId\r\n| where Count >= 20\r\n| sort by Count desc",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P14D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T0819"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

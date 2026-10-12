@@ -1,0 +1,103 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-04-23T11:57:20.7287853Z",
+    "name": "SecurityEvent - Multiple authentication failures followed by a success",
+    "native_rule_id": "9dc7b17e-5e07-4bec-b195-8327f4cd4776",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"c4000121-0000-0d00-0000-69ea09220000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/9dc7b17e-5e07-4bec-b195-8327f4cd4776",
+    "kind": "Scheduled",
+    "name": "9dc7b17e-5e07-4bec-b195-8327f4cd4776",
+    "properties": {
+      "alertRuleTemplateName": "cf3ede88-a429-493b-9108-3e46d3c741f7",
+      "description": "The alert rule was disabled due to too many consecutive failures. Reason: This rule has been experiencing permanent errors and has been disabled. These errors indicate configuration or query issues that require manual intervention. Please review and fix the rule, then re-enable it. For troubleshooting guidance, see: https://aka.ms/AnalyticsAutoDisabledRules Identifies accounts who have failed to logon to the domain multiple times in a row, followed by a successful authentication within a short time frame. Multiple failed attempts followed by a success can be an indication of a brute force attempt or possible mis-configuration of a service account within an environment.\nThe lookback is set to 2h and the authentication window and threshold are set to 1h and 5, meaning we need to see a minimum of 5 failures followed by a success for an account within 1 hour to surface an alert.",
+      "displayName": "SecurityEvent - Multiple authentication failures followed by a success",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Account",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "Name",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "NTDomain",
+              "identifier": "NTDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Computer",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "DnsDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IpAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-04-23T11:57:20.7287853Z",
+      "query": "let timeRange = 2h;\nlet authenticationWindow = 1h;\nlet authenticationThreshold = 5;\nSecurityEvent\n| where TimeGenerated > ago(timeRange)\n| where EventID in (4624, 4625)\n| where IpAddress != \"-\" and isnotempty(Account)\n| extend Outcome = iff(EventID == 4624, \"Success\", \"Failure\")\n// bin outcomes into 10 minute windows to reduce the volume of data\n| summarize OutcomeCount=count() by bin(TimeGenerated, 10m), Account, IpAddress, Computer, Outcome\n| project TimeGenerated, Account, IpAddress, Computer, Outcome, OutcomeCount\n// sort ready for sessionizing - by account and time of the authentication outcome\n| sort by TimeGenerated asc, Account, IpAddress, Computer, Outcome, OutcomeCount\n| serialize\n// sessionize into failure groupings until either the account changes or there is a success\n| extend SessionStartedUtc = row_window_session(TimeGenerated, timeRange, authenticationWindow, Account != prev(Account) or prev(Outcome) == \"Success\")\n// count the failures in each session\n| summarize FailureCountBeforeSuccess=sumif(OutcomeCount, Outcome == \"Failure\"), StartTime=min(TimeGenerated), EndTime=max(TimeGenerated), make_list(Outcome, 128), make_set(Computer, 128), make_set(IpAddress, 128) by SessionStartedUtc, Account\n// the session must not start with a success, and must end with one\n| where array_index_of(list_Outcome, \"Success\") != 0\n| where array_index_of(list_Outcome, \"Success\") == array_length(list_Outcome) - 1\n| project-away SessionStartedUtc, list_Outcome\n// where the number of failures before the success is above the threshold\n| where FailureCountBeforeSuccess >= authenticationThreshold\n// expand out ip and computer for customer entity assignment\n| mv-expand set_IpAddress, set_Computer\n| extend IpAddress = tostring(set_IpAddress), Computer = tostring(set_Computer)\n| extend timestamp=StartTime, NTDomain = split(Account, '\\\\', 0)[0], Name = split(Account, '\\\\', 1)[0], HostName = tostring(split(Computer, '.', 0)[0]), DnsDomain = tostring(strcat_array(array_slice(split(Computer, '.'), 1, -1), '.'))\n",
+      "queryFrequency": "PT2H",
+      "queryPeriod": "PT2H",
+      "severity": "Low",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CredentialAccess"
+      ],
+      "techniques": [
+        "T1110"
+      ],
+      "templateVersion": "1.0.7",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

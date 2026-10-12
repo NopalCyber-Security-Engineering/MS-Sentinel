@@ -1,0 +1,95 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-01-23T07:59:32.0406398Z",
+    "name": "[Nopal Cyber]  Azure Diagnostic settings removed from a resource",
+    "native_rule_id": "a34d751e-8005-4cb5-837d-deb9463e4018",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"8a0aabb7-0000-0d00-0000-69732a640000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/a34d751e-8005-4cb5-837d-deb9463e4018",
+    "kind": "Scheduled",
+    "name": "a34d751e-8005-4cb5-837d-deb9463e4018",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "customDetails": {},
+      "description": "This query looks for diagnostic settings that are removed from a resource.\nThis could indicate an attacker or malicious internal trying to evade detection before malicious act is performed.\nIf the diagnostic settings are being deleted as part of a parent resource deletion, the event is ignores",
+      "displayName": "[Nopal Cyber]  Azure Diagnostic settings removed from a resource",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Caller",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "Name",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "UPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AadUserId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "CallerIpAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-01-23T07:59:32.0406398Z",
+      "query": " AzureActivity\n| where OperationNameValue in~ (\"MICROSOFT.INSIGHTS/DIAGNOSTICSETTINGS/DELETE\", \"MICROSOFT.INSIGHTS/DIAGNOSTICSETTINGS/WRITE\")\n| where not( Caller in (\"84b5aff9-a996-4636-a1a7-e9296e1dd14f\" , \"75868687-bbee-4e3c-9b1a-e8469cb88637\")) // Azure Policy Assignments\n| summarize\n    TimeGenerated = arg_max(TimeGenerated, Properties),\n    ActivityStatusValue = make_set(ActivityStatusValue, 5),\n    take_any(Caller, CallerIpAddress, OperationName, ResourceGroup, Resource)\n    by CorrelationId, _ResourceId, OperationNameValue\n| extend ResourceHierarchy = split(_ResourceId, \"/\")\n| extend MonitoredResourcePath = strcat_array(array_slice(ResourceHierarchy, 0, array_length(ResourceHierarchy) - 5), \"/\")\n| join kind=leftanti (\n    AzureActivity\n    | where OperationNameValue in~ (\"MICROSOFT.INSIGHTS/DIAGNOSTICSETTINGS/DELETE\", \"MICROSOFT.INSIGHTS/DIAGNOSTICSETTINGS/WRITE\") and ActivityStatusValue has_any (\"Success\", \"Succeeded\")\n    | where not( Caller in (\"84b5aff9-a996-4636-a1a7-e9296e1dd14f\" , \"75868687-bbee-4e3c-9b1a-e8469cb88637\")) // Azure Policy Assignments\n    | project _ResourceId\n    )\n    on $left.MonitoredResourcePath == $right._ResourceId\n| extend\n    Name = iif(Caller has \"@\", tostring(split(Caller, \"@\")[0]), \"\"),\n    UPNSuffix = iif(Caller has \"@\", tostring(split(Caller, \"@\")[1]), \"\"),\n    AadUserId = iif(Caller has \"@\", \"\", Caller)\n| project\n    TimeGenerated,\n    Caller,\n    CallerIpAddress,\n    OperationNameValue,\n    OperationName,\n    ActivityStatusValue,\n    ResourceGroup,\n    MonitoredResourcePath,\n    Resource,\n    Properties,\n    Name,\n    UPNSuffix,\n    AadUserId,\n    _ResourceId,\n    CorrelationId\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT2H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "DefenseEvasion"
+      ],
+      "techniques": [
+        "T1562"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

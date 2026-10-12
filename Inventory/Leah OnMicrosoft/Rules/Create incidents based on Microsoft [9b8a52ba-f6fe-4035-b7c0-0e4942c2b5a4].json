@@ -1,0 +1,31 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "false",
+    "kind": "MicrosoftSecurityIncidentCreation",
+    "last_modified": "2024-05-08T11:56:24.7522581Z",
+    "name": "Create incidents based on Microsoft Defender for Endpoint alerts",
+    "native_rule_id": "9b8a52ba-f6fe-4035-b7c0-0e4942c2b5a4",
+    "platform": "microsoft-sentinel",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"1c002558-0000-0d00-0000-663b68680000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/9b8a52ba-f6fe-4035-b7c0-0e4942c2b5a4",
+    "kind": "MicrosoftSecurityIncidentCreation",
+    "name": "9b8a52ba-f6fe-4035-b7c0-0e4942c2b5a4",
+    "properties": {
+      "alertRuleTemplateName": "327cd4ed-ca42-454b-887c-54e1c91363c6",
+      "description": "Create incidents based on all alerts generated in Microsoft Defender for Endpoint",
+      "displayName": "Create incidents based on Microsoft Defender for Endpoint alerts",
+      "displayNamesExcludeFilter": null,
+      "displayNamesFilter": null,
+      "enabled": false,
+      "lastModifiedUtc": "2024-05-08T11:56:24.7522581Z",
+      "productFilter": "Microsoft Defender Advanced Threat Protection",
+      "severitiesFilter": null
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

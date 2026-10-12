@@ -1,0 +1,66 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T07:21:19.5947976Z",
+    "name": "[NopalCyber] Azure AD Role and Group Membership Changes",
+    "native_rule_id": "f9bb2810-6c6f-4938-a46e-b1cbb4efe06a",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"39002068-0000-0d00-0000-68f5e2ef0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/f9bb2810-6c6f-4938-a46e-b1cbb4efe06a",
+    "kind": "Scheduled",
+    "name": "f9bb2810-6c6f-4938-a46e-b1cbb4efe06a",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule detects changes to privileged roles and group memberships within Azure Active Directory. It helps identify potential unauthorized privilege escalation, supports compliance and audit requirements, and allows correlation of identity changes with suspicious activity or alerts. The rule specifically looks for operations such as adding/removing members from roles or groups, and updating role memberships or user details, ensuring the operation was successful.",
+      "displayName": "[NopalCyber] Azure AD Role and Group Membership Changes",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatedBy",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T07:21:19.5947976Z",
+      "query": "AuditLogs\r\n| where OperationName in (\r\n    \"Add member to role\", \r\n    \"Remove member from role\", \r\n    \"Add eligible member to role\", \r\n    \"Remove eligible member from role\", \r\n    \"Update role membership\", \r\n    \"Update user\",\r\n    \"Add member to group\", \r\n    \"Remove member from group\"\r\n)\r\n| where Category contains \"RoleManagement\"\r\n| where Result == \"success\"\r\n| extend TargetUser = tostring(TargetResources[0].userPrincipalName)\r\n| project TimeGenerated, OperationName, InitiatedBy = tostring(InitiatedBy.user.userPrincipalName), TargetUser, TargetResources, AdditionalDetails, Category\r\n| order by TimeGenerated desc",
+      "queryFrequency": "PT3H",
+      "queryPeriod": "PT3H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "PrivilegeEscalation"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

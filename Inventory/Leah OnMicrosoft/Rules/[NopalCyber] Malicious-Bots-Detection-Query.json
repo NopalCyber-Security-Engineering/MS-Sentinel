@@ -1,0 +1,68 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-12-23T07:48:51.2233599Z",
+    "name": "[NopalCyber] Malicious-Bots-Detection-Query",
+    "native_rule_id": "f8f456cd-02ca-4722-bf97-9ec7061c9dc7",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"d000a98b-0000-0d00-0000-694a49640000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/f8f456cd-02ca-4722-bf97-9ec7061c9dc7",
+    "kind": "Scheduled",
+    "name": "f8f456cd-02ca-4722-bf97-9ec7061c9dc7",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule identifies potential malware-related activity by scanning Azure Application Gateway and Front Door WAF logs for known threat names and malware families such as Emotet, TrickBot, QakBot, Dridex, Agent Tesla, and others. It searches across multiple WAF log fields (Message, details_data_s, details_message_s, details_msg_s) for matches against a curated list of malware signatures and botnet identifiers. These detections may indicate:\nCommand-and-control (C2) callbacks\nExploit attempts\nMalware beaconing or payload delivery\nAutomated scanning or bot activity\nThe rule aggregates matches by malware family and provides a count and sample details for each, helping analysts prioritize investigation based on threat prevalence and type",
+      "displayName": "[NopalCyber] Malicious-Bots-Detection-Query",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "File",
+          "fieldMappings": [
+            {
+              "columnName": "Threat",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-12-23T07:48:51.2233599Z",
+      "query": "AzureDiagnostics\n| where Category in (\"ApplicationGatewayFirewallLog\", \"FrontDoorWebApplicationFirewallLog\")\n| where details_data_s matches regex \"(Emotet|Zeus|TrickBot|Satori|Gootkit|Qbot|Ramnit|Necurs|Andromeda|DarkComet|Hajime|Reaper|VPNFilter|Carbanak|Dridex|Kovter|ZLoader|Agent Tesla|FormBook|spider|robot|emotet|zeus|trickBot|satori|gootkit|qbot|ramnit|necurs|andromeda|darkComet|hajime|reaper|vpnfilter|carbanak|dridex|kovter|zloader|agent tesla|formbook|spider|robot)\"\n    or Message matches regex \"(Emotet|Zeus|TrickBot|Satori|Gootkit|Qbot|Ramnit|Necurs|Andromeda|DarkComet|Hajime|Reaper|VPNFilter|Carbanak|Dridex|Kovter|ZLoader|Agent Tesla|FormBook|spider|robot|emotet|zeus|trickBot|satori|gootkit|qbot|ramnit|necurs|andromeda|darkComet|hajime|reaper|vpnfilter|carbanak|dridex|kovter|zloader|agent tesla|formbook|spider|robot)\"\n    or details_msg_s matches regex \"(Emotet|Zeus|TrickBot|Satori|Gootkit|Qbot|Ramnit|Necurs|Andromeda|DarkComet|Hajime|Reaper|VPNFilter|Carbanak|Dridex|Kovter|ZLoader|Agent Tesla|FormBook|spider|robot|emotet|zeus|trickBot|satori|gootkit|qbot|ramnit|necurs|andromeda|darkComet|hajime|reaper|vpnfilter|carbanak|dridex|kovter|zloader|agent tesla|formbook|spider|robot)\"\n    or details_data_s matches regex \"(Emotet|Zeus|TrickBot|Satori|Gootkit|Qbot|Ramnit|Necurs|Andromeda|DarkComet|Hajime|Reaper|VPNFilter|Carbanak|Dridex|Kovter|ZLoader|Agent Tesla|FormBook|spider|robot|emotet|zeus|trickBot|satori|gootkit|qbot|ramnit|necurs|andromeda|darkComet|hajime|reaper|vpnfilter|carbanak|dridex|kovter|zloader|agent tesla|formbook|spider|robot)\"\n| extend CombinedDetails = strcat(details_data_s, \" \", Message, \" \", details_msg_s)\n| summarize Count = count(), Details = make_list(CombinedDetails) by Threat = extract(\"(?i)(Emotet|Zeus|TrickBot|Satori|Gootkit|Qbot|Ramnit|Necurs|Andromeda|DarkComet|Hajime|Reaper|VPNFilter|Carbanak|Dridex|Kovter|ZLoader|Agent Tesla|FormBook|spider|robot|emotet|zeus|trickBot|satori|gootkit|qbot|ramnit|necurs|andromeda|darkComet|hajime|reaper|vpnfilter|carbanak|dridex|kovter|zloader|agent tesla|formbook|spider|robot)\", 1, CombinedDetails)\n| project Threat, Count, Details\n| order by Count desc\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T0819"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T09:09:54.7637102Z",
+    "name": "[NopalCyber] Top 10 Most Sprayed UPNs by IPs and Countries using BehaviourAnalytics",
+    "native_rule_id": "b18d89e3-7a50-4000-bcaa-dc5cfc120cec",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"39002a9d-0000-0d00-0000-68f5fc630000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/b18d89e3-7a50-4000-bcaa-dc5cfc120cec",
+    "kind": "Scheduled",
+    "name": "b18d89e3-7a50-4000-bcaa-dc5cfc120cec",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule identifies user accounts (UPNs) that are the top targets of password spraying / brute force login attempts over the last 7 days.\n\nIt leverages the BehaviorAnalytics table in Microsoft Sentinel, focusing on failed login activities from Azure AD that are correlated with threat intelligence indicators such as Bruteforce, Botnet, or Watchlist hits.",
+      "displayName": "[NopalCyber] Top 10 Most Sprayed UPNs by IPs and Countries using BehaviourAnalytics",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T09:09:54.7637102Z",
+      "query": "BehaviorAnalytics\n| where TimeGenerated > ago(3d)\n| where ActivityType == \"FailedLogOn\" and EventSource == \"Azure AD\"\n| where DevicesInsights has \"ThreatIntelIndicatorType\"\n| extend ParsedJson = parse_json(ActivityInsights)\n| extend \n    ActionUncommonlyPerformedByUser = tostring(ParsedJson.ActionUncommonlyPerformedByUser),\n    App = tostring(ParsedJson.App),\n    Resource = tostring(ParsedJson.Resource),\n    UncommonHighVolumeOfActions = tostring(ParsedJson.UncommonHighVolumeOfActions),\n    UnusualNumberOfFailedSignInOfThisUser = tostring(ParsedJson.UnusualNumberOfFailedSignInOfThisUser),\n    UnusualNumberOfDistinctUsersFailedSignInFromIPAddress = tostring(ParsedJson.UnusualNumberOfDistinctUsersFailedSignInFromIPAddress)\n| project-away ParsedJson\n| where UnusualNumberOfFailedSignInOfThisUser <> \"False\" or ActionUncommonlyPerformedByUser <> \"False\"\n| extend ThreatType = tostring(DevicesInsights.ThreatIntelIndicatorType)\n| where InvestigationPriority > 0\n| where ThreatType has \"Bruteforce\"\n    or ThreatType has \"Botnet\"\n    or ThreatType has \"Watchlist\"\n| summarize\n    SourceIPAdderss = make_set(SourceIPAddress, 100),\n    SourceLocation = make_set(SourceIPLocation, 100),\n    NumofIPAttack=dcount(SourceIPAddress),\n    NumofCountryAttack=dcount(SourceIPLocation)\n    by UserPrincipalName\n| top 10 by NumofIPAttack desc\n",
+      "queryFrequency": "P3D",
+      "queryPeriod": "P3D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CredentialAccess"
+      ],
+      "techniques": [
+        "T1110"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

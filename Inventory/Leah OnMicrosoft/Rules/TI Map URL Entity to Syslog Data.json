@@ -1,0 +1,87 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-06T09:48:15.6482289Z",
+    "name": "TI Map URL Entity to Syslog Data",
+    "native_rule_id": "cd58db82-c242-458b-8f8f-a00f432d2186",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"fb01d173-0000-0d00-0000-690c6ee40000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/cd58db82-c242-458b-8f8f-a00f432d2186",
+    "kind": "Scheduled",
+    "name": "cd58db82-c242-458b-8f8f-a00f432d2186",
+    "properties": {
+      "alertRuleTemplateName": "4de24a28-dcd0-4a0d-bf14-96d8483dc05a",
+      "description": "This query identifies any URL indicators of compromise (IOCs) from threat intelligence (TI) by searching for matches in Syslog data.",
+      "displayName": "TI Map URL Entity to Syslog Data",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Computer",
+              "identifier": "HostName"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "HostIP",
+              "identifier": "Address"
+            }
+          ]
+        },
+        {
+          "entityType": "URL",
+          "fieldMappings": [
+            {
+              "columnName": "Url",
+              "identifier": "Url"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-06T09:48:15.6482289Z",
+      "query": "let dt_lookBack = 1h;\nlet ioc_lookBack = 14d;\nThreatIntelIndicators\n// Picking up only IOC's that contain the entities we want\n//extract key part of kv pair\n| extend IndicatorType = replace(@\"\\[|\\]|\\\"\"\", \"\", tostring(split(ObservableKey, \":\", 0)))\n| where IndicatorType == \"url\"\n| extend Url = ObservableValue\n| extend TrafficLightProtocolLevel = tostring(parse_json(AdditionalFields).TLPLevel)\n| where TimeGenerated >= ago(ioc_lookBack)\n| summarize LatestIndicatorTime = arg_max(TimeGenerated, *) by Id, ObservableValue\n| where IsActive and (ValidUntil > now() or isempty(ValidUntil))\n   | project-reorder *, Tags, TrafficLightProtocolLevel, Url, Type\n// using innerunique to keep perf fast and result set low, we only need one match to indicate potential malicious activity that needs to be investigated\n| join kind=innerunique (\n  Syslog\n  | where TimeGenerated >= ago(dt_lookBack)\n  // Extract URL from the Syslog message but only take messages that include URLs\n  | extend Url = extract(\"(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\\\(\\\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)\", 1,SyslogMessage)\n  | extend Syslog_TimeGenerated = TimeGenerated\n) on Url\n| where Syslog_TimeGenerated < ValidUntil\n| summarize Syslog_TimeGenerated  = arg_max(Syslog_TimeGenerated , *) by Id, Url\n| extend Description = tostring(parse_json(Data).description)\n| extend ActivityGroupNames = extract(@\"ActivityGroup:(\\S+)\", 1, tostring(parse_json(Data).labels))\n| project timestamp = Syslog_TimeGenerated, Description, ActivityGroupNames, Id, Type, ValidUntil, Confidence, SyslogMessage, Computer, ProcessName, Url, HostIP\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P14D",
+      "severity": "Medium",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CommandAndControl"
+      ],
+      "techniques": [
+        "T1071"
+      ],
+      "templateVersion": "1.2.8",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

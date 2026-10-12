@@ -1,0 +1,82 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2024-06-03T08:17:53.827926Z",
+    "name": "Account Created and Deleted in Short Timeframe",
+    "native_rule_id": "bb1e5f51-4e14-4686-8d82-282239a0c8cb",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"00005197-0000-0d00-0000-665d7c330000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/bb1e5f51-4e14-4686-8d82-282239a0c8cb",
+    "kind": "Scheduled",
+    "name": "bb1e5f51-4e14-4686-8d82-282239a0c8cb",
+    "properties": {
+      "alertRuleTemplateName": "bb616d82-108f-47d3-9dec-9652ea0d3bf6",
+      "description": "Search for user principal name (UPN) events. Look for accounts created and then deleted in under 24 hours. Attackers may create an account for their use, and then remove the account when no longer needed.\nRef : https://docs.microsoft.com/azure/active-directory/fundamentals/security-operations-user-accounts#short-lived-account",
+      "displayName": "Account Created and Deleted in Short Timeframe",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Name",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "UPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "DeletedByIPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2024-06-03T08:17:53.827926Z",
+      "query": "let queryfrequency = 1h;\nlet queryperiod = 1d;\nAuditLogs\n| where TimeGenerated > ago(queryfrequency)\n| where OperationName =~ \"Delete user\"\n//extend UserPrincipalName = tostring(TargetResources[0].userPrincipalName)\n| mv-apply TargetResource = TargetResources on \n  (\n      where TargetResource.type == \"User\"\n      | extend UserPrincipalName = extract(@'([a-f0-9]{32})?(.*)', 2, tostring(TargetResource.userPrincipalName))\n  )\n| extend DeletedByUser = tostring(InitiatedBy.user.userPrincipalName), DeletedByIPAddress = tostring(InitiatedBy.user.ipAddress)\n| extend DeletedByApp = tostring(InitiatedBy.app.displayName)\n| project Deletion_TimeGenerated = TimeGenerated, UserPrincipalName, DeletedByUser, DeletedByIPAddress, DeletedByApp, Deletion_AdditionalDetails = AdditionalDetails, Deletion_InitiatedBy = InitiatedBy, Deletion_TargetResources = TargetResources\n| join kind=inner (\n    AuditLogs\n    | where TimeGenerated > ago(queryperiod)\n    | where OperationName =~ \"Add user\"      \n    | mv-apply TargetResource = TargetResources on \n      (\n          where TargetResource.type == \"User\"\n          | extend UserPrincipalName = trim(@'\"',tostring(TargetResource.userPrincipalName))\n      )\n    | project-rename Creation_TimeGenerated = TimeGenerated\n) on UserPrincipalName\n| extend TimeDelta = Deletion_TimeGenerated - Creation_TimeGenerated\n| where  TimeDelta between (time(0s) .. queryperiod)\n| extend CreatedByUser = tostring(InitiatedBy.user.userPrincipalName), CreatedByIPAddress = tostring(InitiatedBy.user.ipAddress)\n| extend CreatedByApp = tostring(InitiatedBy.app.displayName)\n| project Creation_TimeGenerated, Deletion_TimeGenerated, TimeDelta, UserPrincipalName, DeletedByUser, DeletedByIPAddress, DeletedByApp, CreatedByUser, CreatedByIPAddress, CreatedByApp, Creation_AdditionalDetails = AdditionalDetails, Creation_InitiatedBy = InitiatedBy, Creation_TargetResources = TargetResources, Deletion_AdditionalDetails, Deletion_InitiatedBy, Deletion_TargetResources\n| extend timestamp = Deletion_TimeGenerated, Name = tostring(split(UserPrincipalName,'@',0)[0]), UPNSuffix = tostring(split(UserPrincipalName,'@',1)[0])\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "High",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T1078"
+      ],
+      "templateVersion": "1.0.3",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

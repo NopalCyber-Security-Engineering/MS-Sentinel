@@ -1,0 +1,108 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-07-09T11:33:33.8291052Z",
+    "name": "Authentication Methods Changed for Privileged Account",
+    "native_rule_id": "8c97e00f-b8de-44e1-9741-c0133636ad1f",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"02008f75-0000-0d00-0000-686e538f0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/8c97e00f-b8de-44e1-9741-c0133636ad1f",
+    "kind": "Scheduled",
+    "name": "8c97e00f-b8de-44e1-9741-c0133636ad1f",
+    "properties": {
+      "alertRuleTemplateName": "694c91ee-d606-4ba9-928e-405a2dd0ff0f",
+      "description": "Identifies authentication methods being changed for a privileged account. This could be an indication of an attacker adding an auth method to the account so they can have continued access.\nRef : https://docs.microsoft.com/azure/active-directory/fundamentals/security-operations-privileged-accounts#things-to-monitor-1",
+      "displayName": "Authentication Methods Changed for Privileged Account",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAppName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAppServicePrincipalId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingUserPrincipalName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "InitiatingAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAccountUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAadUserId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingIpAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-07-09T11:33:33.8291052Z",
+      "query": "let queryperiod = 14d;\nlet queryfrequency = 2h;\nlet security_info_actions = dynamic([\"User registered security info\", \"User changed default security info\", \"User deleted security info\", \"Admin updated security info\", \"User reviewed security info\", \"Admin deleted security info\", \"Admin registered security info\"]);\nlet VIPUsers = (\n    IdentityInfo\n    | where TimeGenerated > ago(queryperiod)\n    | mv-expand AssignedRoles\n    | where AssignedRoles contains 'Admin'\n    | summarize by AccountUPN);\nAuditLogs\n| where TimeGenerated > ago(queryfrequency)\n| where Category =~ \"UserManagement\"\n| where ActivityDisplayName in (security_info_actions)\n| extend InitiatingAppName = tostring(InitiatedBy.app.displayName)\n| extend InitiatingAppServicePrincipalId = tostring(InitiatedBy.app.servicePrincipalId)\n| extend InitiatingUserPrincipalName = tostring(InitiatedBy.user.userPrincipalName)\n| extend InitiatingAadUserId = tostring(InitiatedBy.user.id)\n| extend InitiatingIpAddress = tostring(iff(isnotempty(InitiatedBy.user.ipAddress), InitiatedBy.user.ipAddress, InitiatedBy.app.ipAddress))\n| mv-apply TargetResource = TargetResources on \n  (\n      where TargetResource.type =~ \"User\"\n      | extend TargetUserPrincipalName = tostring(TargetResource.userPrincipalName)\n  )\n| where TargetUserPrincipalName in~ (VIPUsers)\n// Uncomment the line below if you are experiencing high volumes of Target entities. If this is uncommented, the Target column will not be mapped to an entity.\n//| summarize Start=min(TimeGenerated), End=max(TimeGenerated), Actions = make_set(ResultReason, MaxSize=8), Targets=make_set(Target, MaxSize=256) by Initiator, IP, Result\n// Comment out this line below, if line above is used.\n| summarize Start=min(TimeGenerated), End=max(TimeGenerated), Actions = make_set(ResultReason, MaxSize=8) by InitiatingAppName, InitiatingAppServicePrincipalId, \nInitiatingUserPrincipalName, InitiatingAadUserId, InitiatingIpAddress, TargetUserPrincipalName, Result\n| extend InitiatingAccountName = tostring(split(InitiatingUserPrincipalName, \"@\")[0]), InitiatingAccountUPNSuffix = tostring(split(InitiatingUserPrincipalName, \"@\")[1]), \nTargetName = iff(tostring(TargetUserPrincipalName) has \"[\", \"\", tostring(split(TargetUserPrincipalName,'@',0)[0])), TargetUPNSuffix = iff(tostring(TargetUserPrincipalName) has \"[\", \"\", tostring(split(TargetUserPrincipalName,'@',1)[0]))\n",
+      "queryFrequency": "PT2H",
+      "queryPeriod": "P14D",
+      "severity": "High",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence"
+      ],
+      "techniques": [
+        "T1098"
+      ],
+      "templateVersion": "1.1.1",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2024-06-11T09:40:05.1777324Z",
+    "name": "Unusual Volume of file deletion by users",
+    "native_rule_id": "f7dc1495-fd2a-4aaa-8007-8d50ec342d7a",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"a100c275-0000-0d00-0000-66681b760000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/f7dc1495-fd2a-4aaa-8007-8d50ec342d7a",
+    "kind": "Scheduled",
+    "name": "f7dc1495-fd2a-4aaa-8007-8d50ec342d7a",
+    "properties": {
+      "alertRuleTemplateName": "e5f8e196-3544-4a8b-96a9-17c1b6a49710",
+      "customDetails": {
+        "Count": "TotalCount"
+      },
+      "description": "This query looks for users performing file deletion activities. Spikes in file deletion observed from risky sign-in sessions are flagged here.\nThis applies to SharePoint and OneDrive users.\nAudit event and Cloud application identifier references.\nReference - https://learn.microsoft.com/microsoft-365/compliance/audit-log-activities?view=o365-worldwide\nReference - https://learn.microsoft.com/azure/sentinel/entities-reference#cloud-application-identifiers",
+      "displayName": "Unusual Volume of file deletion by users",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Name",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "NTDomain",
+              "identifier": "NTDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "CloudApplication",
+          "fieldMappings": [
+            {
+              "columnName": "ApplicationId",
+              "identifier": "AppId"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2024-06-11T09:40:05.1777324Z",
+      "query": "let relevantOperations = pack_array(\"FileDeleted\", \"FileRecycled\", \"FileDeletedFirstStageRecycleBin\", \"FileDeletedSecondStageRecycleBin\", \"FileVersionsAllMinorsRecycled\", \"FileVersionRecycled\", \"FileVersionsAllRecycled\");\nlet relevantAppIds = pack_array(int(20892), int(15600)); // App Ids for SharePoint and OneDrive\nlet timeWindow = 7d;\nlet timeNow = now();\n//\nlet riskyUsers= // Look for users with risky sign-ins\n  SigninLogs    \n  | where CreatedDateTime between ((timeNow - timeWindow) .. (timeNow))\n  | where isnotempty(UserId) and isnotempty(OriginalRequestId)\n  | where ResultType == '0'\n  | where RiskLevelDuringSignIn == 'high'\n  | project RiskLevelDuringSignIn, UserId, CreatedDateTime, SessionId=OriginalRequestId\n  ;\nlet hasUsers = isnotempty(toscalar(riskyUsers));\n//\nlet deleteEvents = // look for file deletion activity and scope it to risky users\n  CloudAppEvents\n  | where hasUsers\n  | where TimeGenerated between ((timeNow - timeWindow) .. (timeNow))\n  | where ApplicationId in (relevantAppIds)\n  | where isnotempty(AccountObjectId)\n  | where AccountObjectId in (riskyUsers)\n  | where ActionType in (relevantOperations)\n  | extend SessionId= tostring(RawEventData.AppAccessContext.AADSessionId)\n  | where isnotempty(SessionId)\n  | project UserId=AccountObjectId, AccountDisplayName, ApplicationId, SessionId, ActionType, TimeGenerated, ReportId\n  ;   \n //\ndeleteEvents  \n| join kind=leftsemi riskyUsers on UserId, SessionId\n| summarize Count=count() , (Timestamp, ReportId)=arg_min(TimeGenerated, ReportId) by UserId, AccountDisplayName, ApplicationId, ActionType, Time=bin(TimeGenerated, 5m)\n// look for only those scoped users who have generated an increase in file deletion activity.\n| summarize TotalCount= countif(Count > 50), (Timestamp, ReportId)=arg_min(Timestamp, ReportId) by UserId, AccountDisplayName, ApplicationId \n| where TotalCount >= 3\n| project UserId, AccountDisplayName, ApplicationId, TotalCount, ReportId, Timestamp\n| extend NTDomain = tostring(split(AccountDisplayName,'\\\\',0)[0]), Name = tostring(split(AccountDisplayName,'\\\\',1)[0])\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "High",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [
+        "T1485"
+      ],
+      "templateVersion": "1.0.1",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "false",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T07:30:19.8893101Z",
+    "name": "[NopalCyber] EntraFalcon Detection",
+    "native_rule_id": "5499ee01-efdb-42d6-ada4-d67345846fd2",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"280013a3-0000-0d00-0000-68ecaa8b0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/5499ee01-efdb-42d6-ada4-d67345846fd2",
+    "kind": "Scheduled",
+    "name": "5499ee01-efdb-42d6-ada4-d67345846fd2",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection identifies both interactive and non-interactive sign-ins within Microsoft Entra ID over the past 1 hour that are associated with critical first-party Microsoft applications, including Microsoft Graph and Azure Active Directory. The query focuses on specific AppId and ResourceIdentity combinations to surface authentication events that may indicate potential compromise, unauthorized access, or suspicious service principal activity",
+      "displayName": "[NopalCyber] EntraFalcon Detection",
+      "enabled": false,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T07:30:19.8893101Z",
+      "query": "let QueryPeriod = 1h;\r\nlet InteractiveSignin =\r\nSigninLogs \r\n| where TimeGenerated > ago(QueryPeriod)\r\n| where (AppId == \"1b730954-1685-4b74-9bfd-dac224a7b894\" and\r\nResourceIdentity == \"00000003-0000-0000-c000-000000000000\") or \r\n(AppId == \"04b07795-8ddb-461a-bbee-02f9e1bf7b46\" and\r\nResourceIdentity == \"00000003-0000-0000-c000-000000000000\");\r\nAADNonInteractiveUserSignInLogs\r\n| where TimeGenerated > ago(QueryPeriod)\r\n| where (AppId == \"eb20f3e3-3dce-4d2c-b721-ebb8d4414067\" and\r\nResourceIdentity == \"00000003-0000-0000-c000-000000000000\") or \r\n(AppId == \"04b07795-8ddb-461a-bbee-02f9e1bf7b46\" and\r\nResourceIdentity == \"797f4846-ba00-4fd7-ba43-dac1f8f63013\")\r\n| union InteractiveSignin",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Discovery"
+      ],
+      "techniques": [
+        "T1526",
+        "T1654",
+        "T1580"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

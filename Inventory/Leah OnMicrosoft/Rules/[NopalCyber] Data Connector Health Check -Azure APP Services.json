@@ -1,0 +1,75 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-02-04T09:17:46.7021806Z",
+    "name": "[NopalCyber] Data Connector Health Check -Azure APP Services",
+    "native_rule_id": "69579dba-8d74-4d6b-bd3e-3aceea0ab96b",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"1d002ab9-0000-0d00-0000-69830ebc0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/69579dba-8d74-4d6b-bd3e-3aceea0ab96b",
+    "kind": "Scheduled",
+    "name": "69579dba-8d74-4d6b-bd3e-3aceea0ab96b",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule will identify if any App Service stopped reporting to Sentinel in last 3 days.",
+      "displayName": "[NopalCyber] Data Connector Health Check -Azure APP Services",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Dataconnector",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "ResourceName",
+              "identifier": "FullName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-02-04T09:17:46.7021806Z",
+      "query": "AppServiceHTTPLogs\r\n| where TimeGenerated > ago(7d)\r\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[8])\r\n| extend Dataconnector = \"Azure App Service\"\r\n| summarize LastCall = max(TimeGenerated) by Dataconnector, Type, ResourceName\r\n| extend LogIngestionStatus = iff(LastCall < ago(3d), 'No', 'Yes')\r\n| where LogIngestionStatus == \"No\"\r\n",
+      "queryFrequency": "P3D",
+      "queryPeriod": "P7D",
+      "severity": "Low",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

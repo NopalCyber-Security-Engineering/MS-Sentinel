@@ -1,0 +1,112 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T08:45:07.7016315Z",
+    "name": "[Nopal Cyber] Changes to Application Ownership",
+    "native_rule_id": "6d6bb0c3-188a-45fb-bb0f-5ce1c507fe27",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"39005f8f-0000-0d00-0000-68f5f6940000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/6d6bb0c3-188a-45fb-bb0f-5ce1c507fe27",
+    "kind": "Scheduled",
+    "name": "6d6bb0c3-188a-45fb-bb0f-5ce1c507fe27",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Detects changes to the ownership of an appplicaiton.\nMonitor these changes to make sure that they were authorized",
+      "displayName": "[Nopal Cyber] Changes to Application Ownership",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingUserPrincipalName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "InitiatingAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAccountUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAadUserId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "TargetUserPrincipalName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "TargetAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "TargetAccountUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "TargetAadUserId",
+              "identifier": "AadUserId"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T08:45:07.7016315Z",
+      "query": "AuditLogs\r\n    | where Category =~ \"ApplicationManagement\"\r\n    | where OperationName =~ \"Add owner to application\"\r\n    | extend InitiatingAppName = tostring(InitiatedBy.app.displayName)\r\n    | extend InitiatingAppServicePrincipalId = tostring(InitiatedBy.app.servicePrincipalId)\r\n    | extend InitiatingUserPrincipalName = tostring(InitiatedBy.user.userPrincipalName)\r\n    | extend InitiatingAadUserId = tostring(InitiatedBy.user.id)\r\n    | extend InitiatingIPAddress = tostring(InitiatedBy.user.ipAddress)\r\n    | extend TargetUserPrincipalName = TargetResources[0].userPrincipalName\r\n    | extend TargetAadUserId = tostring(TargetResources[0].id)\r\n    | extend mod_props = TargetResources[0].modifiedProperties\r\n    | mv-expand mod_props\r\n    | where mod_props.displayName =~ \"Application.DisplayName\"\r\n    | extend TargetAppName = tostring(parse_json(tostring(mod_props.newValue)))\r\n    | extend AddedUser = TargetUserPrincipalName\r\n    | extend UpdatedBy = iif(isnotempty(InitiatingAppName), InitiatingAppName, InitiatingUserPrincipalName)\r\n    | extend InitiatingAccountName = tostring(split(InitiatingUserPrincipalName, \"@\")[0]), InitiatingAccountUPNSuffix = tostring(split(InitiatingUserPrincipalName, \"@\")[1])\r\n    | extend TargetAccountName = tostring(split(TargetUserPrincipalName, \"@\")[0]), TargetAccountUPNSuffix = tostring(split(TargetUserPrincipalName, \"@\")[1])\r\n    | project-reorder TimeGenerated, InitiatingAppName, InitiatingAppServicePrincipalId, InitiatingAadUserId, InitiatingUserPrincipalName, InitiatingIPAddress, TargetAppName, AddedUser, UpdatedBy",
+      "queryFrequency": "PT2H",
+      "queryPeriod": "PT2H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence",
+        "PrivilegeEscalation"
+      ],
+      "techniques": [
+        "T1078"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

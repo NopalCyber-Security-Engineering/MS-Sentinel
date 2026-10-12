@@ -1,0 +1,98 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-09-18T05:12:19.8320763Z",
+    "name": "[NopalCyber] Entra ID OAuth Phishing via Visual Studio Code Client",
+    "native_rule_id": "3eadb945-f6f0-4cca-916a-91a336ac694e",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"7315c87d-0000-0d00-0000-6aacc8340000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/3eadb945-f6f0-4cca-916a-91a336ac694e",
+    "kind": "Scheduled",
+    "name": "3eadb945-f6f0-4cca-916a-91a336ac694e",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Detects successful non-interactive sign-ins to Microsoft Graph using the Visual Studio Code (VSCode) application identity. This behavior was observed in a phishing campaign where threat actors tricked users into an OAuth flow to harvest tokens. These tokens were then used to access user data, such as emails, via the Graph API.",
+      "displayName": "[NopalCyber] Entra ID OAuth Phishing via Visual Studio Code Client",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPAddress",
+              "identifier": "Address"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "CloudApplication",
+          "fieldMappings": [
+            {
+              "columnName": "AppDisplayName",
+              "identifier": "Name"
+            }
+          ]
+        },
+        {
+          "entityType": "AzureResource",
+          "fieldMappings": [
+            {
+              "columnName": "ResourceDisplayName",
+              "identifier": "ResourceId"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": true,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-09-18T05:12:19.8320763Z",
+      "query": "AADNonInteractiveUserSignInLogs\n| where ResultType == \"0\"\n| where UserType == \"Member\"\n| where AppId == \"aebc6443-996d-45c2-90f0-388ff96faa56\"\n| where ResourceIdentity == \"00000003-0000-0000-c000-000000000000\" or ResourceDisplayName == \"Microsoft Graph\"\n| where AuthenticationProcessingDetails has \"Oauth\"\n| where parse_json(DeviceDetail).isCompliant == false //Filter non-compliant devices\n| extend DeviceName = tostring(parse_json(DeviceDetail).displayName)\n| extend DeviceID = tostring(parse_json(DeviceDetail).deviceId)\n| where not (UserPrincipalName  in (\"prasad.ahire@contractpod.onmicrosoft.com\") and DeviceName in (\"CPAI-ahire\") and DeviceID in (\"0ca9a383-ec31-43fe-8b52-20ce54bb0b4e\")) //user is part of Developers group\n| project-reorder\n    TimeGenerated,\n    UserPrincipalName,\n    AppDisplayName,\n    IPAddress,\n    Location,\n    ResourceDisplayName,\n    AuthenticationProcessingDetails,\n    DeviceDetail,\n    UserAgent,\n    CorrelationId\n\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "CredentialAccess",
+        "Persistence"
+      ],
+      "techniques": [
+        "T1566",
+        "T1528"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

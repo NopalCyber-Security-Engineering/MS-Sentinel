@@ -1,0 +1,61 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-09-30T10:03:43.6933826Z",
+    "name": "[NopalCyber] Windows Anitivirus and EDR Elevation of Privilege Vulnerability",
+    "native_rule_id": "d2189c74-cacb-40f3-bb32-060995261c68",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4b00a1ec-0000-0d00-0000-68dbab010000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/d2189c74-cacb-40f3-bb32-060995261c68",
+    "kind": "Scheduled",
+    "name": "d2189c74-cacb-40f3-bb32-060995261c68",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "The query for malicious file creations via TOCTOU Vulnerability in Leading Endpoint Detection and Response (EDR) and Antivirus (AV) Solutions.\n- Microsoft Defender (CVE-2022-37971)\n- Defender for Endpoint (CVE-2022-37971)\n- SentinelOne EDR\n- TrendMicro Apex One (CVE-2022-45797)\n- Avast Antivirus (CVE-2022-4173)\n- AVG Antivirus (CVE-2022-4173)\n\nTA0004 - Privilege Escalation\nT",
+      "displayName": "[NopalCyber] Windows Anitivirus and EDR Elevation of Privilege Vulnerability",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-09-30T10:03:43.6933826Z",
+      "query": "  DeviceFileEvents\r\n  | where Timestamp > ago(7d)\r\n  | where ActionType == \"FileCreated\"\r\n  | where FileName endswith \"ndis.sys\"\r\n  | where FolderPath startswith \"C:\\\\temp\\\\Windows\\\\System32\\\\drivers\\\\\"",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P7D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "PrivilegeEscalation",
+        "LateralMovement",
+        "Persistence",
+        "DefenseEvasion"
+      ],
+      "techniques": [
+        "T1068",
+        "T1574"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

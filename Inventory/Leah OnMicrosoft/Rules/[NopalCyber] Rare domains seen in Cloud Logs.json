@@ -1,0 +1,61 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "false",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T08:52:25.8840515Z",
+    "name": "[NopalCyber] Rare domains seen in Cloud Logs",
+    "native_rule_id": "9351ebe4-e5a0-4eb8-844d-f0b85b600f76",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"39005b93-0000-0d00-0000-68f5f8490000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/9351ebe4-e5a0-4eb8-844d-f0b85b600f76",
+    "kind": "Scheduled",
+    "name": "9351ebe4-e5a0-4eb8-844d-f0b85b600f76",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This script identifies rare domain accounts accessing cloud resources by examining logs. You can lower the domainLimit value to see domains with fewer access attempts. For example, set domainLimit = 2 to see domains with 2 or fewer access attempts.",
+      "displayName": "[NopalCyber] Rare domains seen in Cloud Logs",
+      "enabled": false,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T08:52:25.8840515Z",
+      "query": "let customLimit = 11;\r\n  let domainLimit = 10;\r\n  let domainLookback = union isfuzzy=true\r\n  (AuditLogs\r\n  | extend UserPrincipalName = tolower(tostring(TargetResources.[0].userPrincipalName))\r\n  // parse out AuditLog values for various locations where UPN could be\r\n  | extend UserPrincipalName = iff(isnotempty(UserPrincipalName),\r\n  UserPrincipalName, \r\n  iif((tostring(InitiatedBy.user.userPrincipalName)=='unknown'), \r\n  extract(\"Email: ([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\\\.[a-zA-Z0-9-.]+)\", 1, tostring(parse_json(TargetResources)[0].displayName)), \r\n  InitiatedBy.user.userPrincipalName))\r\n  | where UserPrincipalName has \"@\" or UserPrincipalName startswith \"NT AUTHORITY\"\r\n  | extend RareDomain = toupper(tostring(split(UserPrincipalName, \"@\")[-1]))\r\n  | where isnotempty(RareDomain) \r\n  | summarize RareDomainCount = count() by Type, RareDomain,UserPrincipalName\r\n  | where RareDomainCount <= domainLimit\r\n  | extend AccountCustomEntity = UserPrincipalName\r\n  // remove comment from below if you would like to have a lower limit for RareDomainCount specific to AuditLog\r\n  //| where RareDomainCount <= customLimit\r\n  ),\r\n  (OfficeActivity\r\n  | extend UserPrincipalName = tolower(UserId)\r\n  | where UserPrincipalName has \"@\" or UserPrincipalName startswith \"NT AUTHORITY\"\r\n  | extend RareDomain = toupper(tostring(split(UserPrincipalName, \"@\")[-1]))\r\n  | summarize RareDomainCount = count() by Type, RareDomain, UserPrincipalName\r\n  | where RareDomainCount <= domainLimit\r\n  | extend AccountCustomEntity = UserPrincipalName\r\n  // remove comment from below if you would like to have a lower limit for RareDomainCount specific to OfficeActivity\r\n  //| where RareDomainCount <= customLimit\r\n  ),\r\n  (SigninLogs\r\n  | where UserPrincipalName has \"@\" or UserPrincipalName startswith \"NT AUTHORITY\"\r\n  | extend RareDomain = toupper(tostring(split(UserPrincipalName, \"@\")[-1]))\r\n  | summarize RareDomainCount = count() by Type, RareDomain\r\n  | where RareDomainCount <= domainLimit\r\n  // remove comment from below if you would like to have a lower limit for RareDomainCount specific to SigninLogs\r\n  //| where RareDomainCount <= customLimit\r\n  );\r\n  let AuditLogsRef = domainLookback | join (\r\n     AuditLogs\r\n     | extend UserPrincipalName = tolower(tostring(TargetResources.[0].userPrincipalName))\r\n     | extend UserPrincipalName = iff(isempty(UserPrincipalName), tostring(InitiatedBy.user.userPrincipalName), UserPrincipalName)\r\n     | extend RareDomain = toupper(tostring(split(UserPrincipalName, \"@\")[-1]))\r\n     | where isnotempty(RareDomain) \r\n     | summarize UPNRefCount = count() by TimeGenerated, Type, RareDomain, UserPrincipalName, OperationName, Category, Result\r\n     | extend AccountCustomEntity = UserPrincipalName\r\n  ) on Type, RareDomain;\r\n  let OfficeActivityRef = domainLookback | join (\r\n      OfficeActivity\r\n      | extend UserPrincipalName = tolower(UserId)\r\n      | where UserPrincipalName has \"@\" or UserPrincipalName startswith \"NT AUTHORITY\"\r\n      | extend RareDomain = toupper(tostring(split(UserPrincipalName, \"@\")[-1]))\r\n      | summarize UPNRefCount = count() by TimeGenerated, Type, RareDomain, UserPrincipalName, OperationName = Operation, Category = OfficeWorkload, Result = ResultStatus\r\n      | extend AccountCustomEntity = UserPrincipalName\r\n  ) on Type, RareDomain;\r\n  let SigninLogsRef = domainLookback | join (\r\n      SigninLogs\r\n      | extend UserPrincipalName = tolower(UserId)\r\n      | where UserPrincipalName has \"@\" or UserPrincipalName startswith \"NT AUTHORITY\"\r\n      | extend RareDomain = toupper(tostring(split(UserPrincipalName, \"@\")[-1]))\r\n      | summarize UPNRefCount = count() by TimeGenerated, Type, RareDomain, UserPrincipalName, OperationName, Category = AppDisplayName, Result = ResultType\r\n      | extend AccountCustomEntity = UserPrincipalName\r\n  ) on Type, RareDomain;\r\n  let Results = union isfuzzy=true\r\n  AuditLogsRef,OfficeActivityRef,SigninLogsRef;\r\n  Results | project TimeGenerated, Type, RareDomain, UserPrincipalName, OperationName, Category, Result, UPNRefCount \r\n  | order by TimeGenerated asc \r\n  | extend timestamp = TimeGenerated, AccountCustomEntity = UserPrincipalName",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P14D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "Discovery",
+        "Collection"
+      ],
+      "techniques": [
+        "T1190",
+        "T1087",
+        "T1114"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

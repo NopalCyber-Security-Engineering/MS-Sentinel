@@ -1,0 +1,79 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2022-04-08T17:56:04.3841035Z",
+    "name": "Azure AD Role Management Permission Grant",
+    "native_rule_id": "0b75426c-438d-4724-b192-b0abfe40addb",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"10006733-0000-0d00-0000-625077340000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/0b75426c-438d-4724-b192-b0abfe40addb",
+    "kind": "Scheduled",
+    "name": "0b75426c-438d-4724-b192-b0abfe40addb",
+    "properties": {
+      "alertRuleTemplateName": "1ff56009-db01-4615-8211-d4fda21da02d",
+      "description": "Identifies when the Microsoft Graph RoleManagement.ReadWrite.Directory (Delegated or Application) permission is granted to a service principal.\nThis permission allows an application to read and manage the role-based access control (RBAC) settings for your company's directory.\nAn adversary could use this permission to add an Azure AD object to an Admin directory role and escalate privileges.\nRef : https://docs.microsoft.com/graph/permissions-reference#role-management-permissions\nRef : https://docs.microsoft.com/graph/api/directoryrole-post-members?view=graph-rest-1.0&tabs=http",
+      "displayName": "Azure AD Role Management Permission Grant",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Initiator",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Target",
+              "identifier": "FullName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2022-04-08T17:56:04.3841035Z",
+      "query": "AuditLogs\n| where LoggedByService =~ \"Core Directory\"\n| where Category =~ \"ApplicationManagement\"\n| where AADOperationType =~ \"Assign\"\n| where ActivityDisplayName has_any (\"Add delegated permission grant\",\"Add app role assignment to service principal\")\n| mv-expand TargetResources\n| mv-expand TargetResources.modifiedProperties\n| extend displayName_ = tostring(TargetResources_modifiedProperties.displayName)\n| where displayName_ has_any (\"AppRole.Value\",\"DelegatedPermissionGrant.Scope\")\n| extend Permission = tostring(parse_json(tostring(TargetResources_modifiedProperties.newValue)))\n| where Permission has \"RoleManagement.ReadWrite.Directory\"\n| extend InitiatingApp = tostring(parse_json(tostring(InitiatedBy.app)).displayName)\n| extend Initiator = iif(isnotempty(InitiatingApp), InitiatingApp, tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName))\n| extend Target = tostring(parse_json(tostring(TargetResources.modifiedProperties[4].newValue)))\n| extend TargetId = iif(displayName_ =~ 'DelegatedPermissionGrant.Scope',\n  tostring(parse_json(tostring(TargetResources.modifiedProperties[2].newValue))),\n  tostring(parse_json(tostring(TargetResources.modifiedProperties[3].newValue))))\n| summarize by bin(TimeGenerated, 1h), OperationName, Initiator, Target, TargetId, Result",
+      "queryFrequency": "PT2H",
+      "queryPeriod": "PT2H",
+      "severity": "High",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "PrivilegeEscalation",
+        "Persistence"
+      ],
+      "techniques": [
+        "T1098"
+      ],
+      "templateVersion": "1.0.0",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

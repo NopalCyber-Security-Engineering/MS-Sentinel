@@ -1,0 +1,55 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-07T13:19:27.223249Z",
+    "name": "[NopalCyber] Detection for Sudo Chroot Privilege Escalation (CVE-2025-32463)",
+    "native_rule_id": "9398113f-731e-48a6-be4e-0c0033c6bd56",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2e02c737-0000-0d00-0000-690df1df0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/9398113f-731e-48a6-be4e-0c0033c6bd56",
+    "kind": "Scheduled",
+    "name": "9398113f-731e-48a6-be4e-0c0033c6bd56",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection identifies potential exploitation attempts of the Sudo Chroot Privilege Escalation vulnerability (CVE-2025-32463).",
+      "displayName": "[NopalCyber] Detection for Sudo Chroot Privilege Escalation (CVE-2025-32463)",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-07T13:19:27.223249Z",
+      "query": "let LookBack = 1h;\r\nlet SudoExploit =\r\nDeviceFileEvents\r\n| where TimeGenerated > ago(LookBack)\r\n| where ActionType == \"FileModified\"\r\n| where FileName has \"nsswitch.conf\" and FolderPath has \"/etc\"\r\n| project DeviceName;\r\nDeviceProcessEvents\r\n| where TimeGenerated > ago(LookBack)\r\n| where ProcessCommandLine startswith \"sudo -R\" or InitiatingProcessCommandLine startswith \"sudo -R\"\r\n| where DeviceName has_any(SudoExploit)",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "PrivilegeEscalation"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

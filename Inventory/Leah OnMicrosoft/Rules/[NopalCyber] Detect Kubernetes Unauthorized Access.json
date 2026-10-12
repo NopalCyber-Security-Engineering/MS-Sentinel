@@ -1,0 +1,94 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T06:42:22.3981916Z",
+    "name": "[NopalCyber] Detect Kubernetes Unauthorized Access",
+    "native_rule_id": "769f1c2c-718f-4cb9-bc0e-6b08c1b4b23d",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"39002958-0000-0d00-0000-68f5d9ce0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/769f1c2c-718f-4cb9-bc0e-6b08c1b4b23d",
+    "kind": "Scheduled",
+    "name": "769f1c2c-718f-4cb9-bc0e-6b08c1b4b23d",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule detects multiple unauthorized access attempts within a short time window in Azure Kubernetes Service (AKS) by analyzing AKS Audit Logs.\n\nIt identifies repeated failed create operations (HTTP status codes 401 or 403) that return “Forbidden,” which indicates potential attempts by users, service accounts, or external entities to create Kubernetes resources without proper authorization\n\nThe rule aggregates unauthorized events from the same source IP or user within the defined lookback period (1 hour) and triggers an alert if the count exceeds the defined threshold (≥10 failures",
+      "displayName": "[NopalCyber] Detect Kubernetes Unauthorized Access",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "SourceIP",
+              "identifier": "Address"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "ResourceName",
+              "identifier": "HostName"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "User",
+              "identifier": "FullName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T06:42:22.3981916Z",
+      "query": "let Lookupperiod = 1h;\nAKSAudit\n| where TimeGenerated >= ago(Lookupperiod)\n| where Verb == \"create\"\n| where tostring(ResponseStatus.code) in (401, 403)\n| where ResponseStatus.reason == \"Forbidden\"\n| extend FailureMessage = tostring(ResponseStatus.message)\n| extend SourceIP = tostring(SourceIps[0])\n| extend User = tostring(User.username)\n| extend Objectresource = tostring(ObjectRef.resource)\n| extend Objectnamespace = tostring(ObjectRef.namespace)\n| extend Objectname = tostring(ObjectRef.name)\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[8])\n| summarize count() by SourceIP, User, RequestUri, PodName, Objectresource, Objectnamespace, Objectname, Level, UserAgent , FailureMessage, ResourceName\n| where count_ >= 10\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "Execution",
+        "PrivilegeEscalation",
+        "CredentialAccess",
+        "Discovery",
+        "Impact"
+      ],
+      "techniques": [
+        "T1078",
+        "T1528",
+        "T1087",
+        "T1496"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-06T10:12:45.0112073Z",
+    "name": "[NopalCyber] Snake Keylogger PowerShell Download and Execute",
+    "native_rule_id": "ba751b4e-5876-481a-b3f7-8a7ab5a00de8",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"fc01ee9a-0000-0d00-0000-690c749d0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/ba751b4e-5876-481a-b3f7-8a7ab5a00de8",
+    "kind": "Scheduled",
+    "name": "ba751b4e-5876-481a-b3f7-8a7ab5a00de8",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Detects a PowerShell command line pattern used by Snake Keylogger to download and execute a payload. This pattern involves using Invoke-WebRequest to fetch a file and Start-Process to run it, often with parameters to hide the execution window. The rule also looks for execution from a temporary directory, a common malware technique.",
+      "displayName": "[NopalCyber] Snake Keylogger PowerShell Download and Execute",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "DeviceName",
+              "identifier": "HostName"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountName",
+              "identifier": "Name"
+            }
+          ]
+        },
+        {
+          "entityType": "File",
+          "fieldMappings": [
+            {
+              "columnName": "FileName",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-06T10:12:45.0112073Z",
+      "query": "DeviceProcessEvents\r\n| where FileName in~ (\"powershell.exe\", \"pwsh.exe\")\r\n| where ProcessCommandLine has_all (\"Invoke-WebRequest\", \"Start-Process\", \"-OutFile\")\r\n    and (ProcessCommandLine has_all (\"-WindowStyle\", \"Hidden\") or ProcessCommandLine has \"-w hidden\")\r\n    and ProcessCommandLine has \"-NoProfile\"\r\n| where ProcessCommandLine matches regex @'(\\$env:TEMP|\\\\AppData\\\\Local\\\\Temp\\\\[\\w-]+\\.exe)'\r\n| project\r\n    Timestamp,\r\n    DeviceName,\r\n    AccountName,\r\n    FileName,\r\n    ProcessCommandLine,\r\n    InitiatingProcessFileName,\r\n    InitiatingProcessCommandLine,\r\n    DeviceId",
+      "queryFrequency": "PT5H",
+      "queryPeriod": "PT5H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CommandAndControl",
+        "Execution",
+        "DefenseEvasion"
+      ],
+      "techniques": [
+        "T1105",
+        "T1059",
+        "T1564",
+        "T1036"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

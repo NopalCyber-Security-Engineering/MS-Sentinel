@@ -1,0 +1,60 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T07:16:43.3292273Z",
+    "name": "[NopalCyber] Add Passkey device-bound MS Authenticator Windows Hello detection",
+    "native_rule_id": "2d9cb582-0172-4306-a5bf-ef8c2c318478",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2800379c-0000-0d00-0000-68eca75b0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/2d9cb582-0172-4306-a5bf-ef8c2c318478",
+    "kind": "Scheduled",
+    "name": "2d9cb582-0172-4306-a5bf-ef8c2c318478",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "With the public preview of expanding Entra passkey options, Entra admins will now need to make sure passkeys are properly managed as part of the security key life cycle management for both privilege and non-privilege roles. Security operations will also need to have detection on *NEW* passkey added from both malicious or non-malicious perspectives so that threat can be monitor and mitigated when required",
+      "displayName": "[NopalCyber] Add Passkey device-bound MS Authenticator Windows Hello detection",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T07:16:43.3292273Z",
+      "query": "AuditLogs\r\n| where ActivityDisplayName contains \"Add Passkey\"\r\n| where Result == \"success\"\r\n| extend AccountUPN = TargetResources[0].userPrincipalName\r\n| extend AAGUID = AdditionalDetails[1].value\r\n| extend WebAuthnInfo = AdditionalDetails[0].value\r\n| project TimeGenerated, AccountUPN, ActivityDisplayName, AAGUID, WebAuthnInfo",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "PrivilegeEscalation",
+        "CredentialAccess",
+        "Reconnaissance"
+      ],
+      "techniques": [
+        "T1078",
+        "T1556"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

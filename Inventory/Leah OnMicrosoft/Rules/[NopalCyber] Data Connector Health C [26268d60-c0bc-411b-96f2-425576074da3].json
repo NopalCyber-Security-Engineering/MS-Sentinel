@@ -1,0 +1,66 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-02-04T09:21:23.1601095Z",
+    "name": "[NopalCyber] Data Connector Health Check -Microsoft Defender Threat Intelligence",
+    "native_rule_id": "26268d60-c0bc-411b-96f2-425576074da3",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"1d0009bd-0000-0d00-0000-69830f930000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/26268d60-c0bc-411b-96f2-425576074da3",
+    "kind": "Scheduled",
+    "name": "26268d60-c0bc-411b-96f2-425576074da3",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule is identifying if Defender Threat Inelligence Logs data source has stopped reporting to Sentinel in Last 3 days.",
+      "displayName": "[NopalCyber] Data Connector Health Check -Microsoft Defender Threat Intelligence",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Dataconnector",
+              "identifier": "FullName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-02-04T09:21:23.1601095Z",
+      "query": "ThreatIntelIndicators \r\n| where TimeGenerated > ago(7d)\r\n| where SourceSystem in (\"Microsoft Defender Threat Intelligence\", \"Microsoft Emerging Threat Feed\")\r\n| extend Dataconnector = \"Microsoft Defender Threat Intelligence\"\r\n| summarize LastCall = max(TimeGenerated) by Type,Dataconnector\r\n| extend LogIngestionStatus = iff(LastCall < ago(3d), 'No', 'Yes')\r\n| where LogIngestionStatus == \"No\"",
+      "queryFrequency": "P3D",
+      "queryPeriod": "P7D",
+      "severity": "Low",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T07:17:31.8725155Z",
+    "name": "[NopalCyber] Entra Passkey Addition Threat Detection",
+    "native_rule_id": "10f935c2-266a-4719-af6b-831b67c10b99",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"28009b9c-0000-0d00-0000-68eca78c0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/10f935c2-266a-4719-af6b-831b67c10b99",
+    "kind": "Scheduled",
+    "name": "10f935c2-266a-4719-af6b-831b67c10b99",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "",
+      "displayName": "[NopalCyber] Entra Passkey Addition Threat Detection",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T07:17:31.8725155Z",
+      "query": "AuditLogs\r\n| where ActivityDisplayName == \"Add Passkey (device-bound) security key\"\r\n| where Result == \"success\"\r\n| extend AccountUPN = TargetResources[0].userPrincipalName\r\n| extend AAGUID = AdditionalDetails[1].value\r\n| extend WebAuthnInfo = AdditionalDetails[0].value\r\n| project TimeGenerated, AccountUPN, ActivityDisplayName, AAGUID, WebAuthnInfo",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "PrivilegeEscalation",
+        "CredentialAccess"
+      ],
+      "techniques": [
+        "T1078",
+        "T1556"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

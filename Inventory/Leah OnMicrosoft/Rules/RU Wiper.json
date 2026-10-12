@@ -1,0 +1,57 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2022-04-08T23:59:39.5759085Z",
+    "name": "RU Wiper",
+    "native_rule_id": "f0f4922a-e433-418c-8dbe-95486bbe260a",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"110034db-0000-0d00-0000-6250cc6c0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/f0f4922a-e433-418c-8dbe-95486bbe260a",
+    "kind": "Scheduled",
+    "name": "f0f4922a-e433-418c-8dbe-95486bbe260a",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Known malicious wiper files",
+      "displayName": "RU Wiper",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2022-04-08T23:59:39.5759085Z",
+      "query": "let SHA256Hash = dynamic(\n    [\n'107da216ad99b7c0171745fe7f826e51b27b1812d435b55c3ddb801e23137d8f'  \n'1f36898228197ee30c7b0ec0e48e804caa6edec33e3a91eeaf7aa2c5bbb9c6e0'\n'610ec163e7b34abd5587616db8dac7e34b1aef68d0260510854d6b3912fb0008'\n'696b6b9f43e53387f7cef14c5da9b6c02b6bf4095849885d36479f8996e7e473'\n'8f2ea18ed82085574888a03547a020b7009e05ae0ecbf4e9e0b8fe8502059aae'\n'979f9d1e019d9172af73428a1b3cbdff8aec8fdbe0f67cba48971a36f5001da9'\n'ceebcd4472623db39026ae89dc0737d0cdec631cd763d9717d0f4a822a3a2085'\n'8f2ea18ed82085574888a03547a020b7009e05ae0ecbf4e9e0b8fe8502059aae'\n    ]\n);\nDeviceFileEvents\n| where SHA256 in(SHA256Hash)\n| union DeviceImageLoadEvents\n| where SHA256 in(SHA256Hash)   \n",
+      "queryFrequency": "PT5H",
+      "queryPeriod": "PT5H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [
+        "T1561"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

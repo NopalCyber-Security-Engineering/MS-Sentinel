@@ -1,0 +1,75 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-10-05T09:12:12.7347255Z",
+    "name": "[NopalCyber] Azure Storage Mass File Deletion",
+    "native_rule_id": "3442644a-7629-47bb-8899-f9845b713d69",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"b20133fe-0000-0d00-0000-6ac369ed0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/3442644a-7629-47bb-8899-f9845b713d69",
+    "kind": "Scheduled",
+    "name": "3442644a-7629-47bb-8899-f9845b713d69",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This will help to 'Detect mass file deletion events within Azure File and Blob storage. deleteWindow controls the period of time the deletions must occur in, whilst the deleteThreshold controls how many files must be deleted within that threshold. Query works on a per-IP address basis, so will only detect a single IP deleting multiple files.",
+      "displayName": "[NopalCyber] Azure Storage Mass File Deletion",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "CallerIpAddress",
+              "identifier": "Address"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "AccountName",
+              "identifier": "FullName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": true,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-10-05T09:12:12.7347255Z",
+      "query": "let deleteThreshold = 50;\nlet deleteWindow = 1h;\nlet SourceDet = Heartbeat\n    | where TimeGenerated >= ago(1h)\n    | extend ComputerPrivateIP = tostring(ComputerPrivateIPs[0])\n    | extend SrcHostname = Computer, ComputerIP, ComputerPrivateIP\n    | distinct SrcHostname, ComputerPrivateIP, ComputerIP;\nunion\n    StorageFileLogs,\n    StorageBlobLogs\n| where StatusText =~ \"Success\"\n| where TimeGenerated >= ago(1h)\n| where OperationName =~ \"DeleteBlob\" or OperationName =~ \"DeleteFile\"\n| extend CallerIpAddress = tostring(split(CallerIpAddress, \":\", 0)[0])\n| extend ResourceName = tostring(split(_ResourceId, \"/\")[8])\n| where not(ipv4_is_private(CallerIpAddress)) //PE-180\n| where not(UserAgentHeader in (\"Azure/1.0 AzureStorage/1.0 ObjectLifeCycleScanner/0.50\" , \"xAzure/1.0 AzureStorage/1.0 ObjectLifeCycleScanner/0.50\"))\n| where not(UserAgentHeader in(\"azsdk-net-Storage.Blobs/12.24.0 (.NET 8.0.31; Debian GNU/Linux 12 (bookworm))\") and CallerIpAddress in(\"20.174.216.99\"))\n| summarize count(), DeletedFilesList = make_set(ObjectKey, 100)\n    by\n    CallerIpAddress,\n    AccountName,\n    UserAgentHeader,\n    StatusCode,\n    Category,\n    Type,\n    ResourceName\n| join kind = leftouter SourceDet on $left.CallerIpAddress == $right.ComputerPrivateIP\n//| summarize dcount(ObjectKey) by bin(TimeGenerated, deleteWindow), CallerIpAddress, UserAgentHeader, AccountName, Uri\n| where count_ >= deleteThreshold\n| project\n    CallerIpAddress,\n    SrcHostname,\n    AccountName,\n    ResourceName,\n    UserAgentHeader,\n    StatusCode,\n    Category,\n    Type,\n    DeletedFilesList,\n    count_\n\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "Low",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

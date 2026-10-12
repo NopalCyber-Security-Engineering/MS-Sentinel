@@ -1,0 +1,68 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T11:49:15.5373971Z",
+    "name": "[NopalCyber] Detect abusing Intune permissions for Lateral Movement",
+    "native_rule_id": "c7e70519-24fb-4119-87d8-bfe2188d1431",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2900543d-0000-0d00-0000-68ece73b0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/c7e70519-24fb-4119-87d8-bfe2188d1431",
+    "kind": "Scheduled",
+    "name": "c7e70519-24fb-4119-87d8-bfe2188d1431",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "",
+      "displayName": "[NopalCyber] Detect abusing Intune permissions for Lateral Movement",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatedByUPN",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T11:49:15.5373971Z",
+      "query": "AuditLogs\r\n| where TimeGenerated > ago(1h)\r\n| where OperationName has \"Add app role assignment to service principal\"\r\n| extend InitiatedByUPN = parse_json(tostring(InitiatedBy.user)).userPrincipalName\r\n| extend AppRole = parse_json(tostring(parse_json(tostring(TargetResources[0].modifiedProperties))[1].newValue))\r\n| extend ServicePrincipalName = parse_json(tostring(parse_json(tostring(TargetResources[0].modifiedProperties))[6].newValue))\r\n| extend ServicePrincipalObjectID = parse_json(tostring(parse_json(tostring(TargetResources[0].modifiedProperties))[5].newValue))\r\n| where AppRole has \"DeviceManagementConfiguration.ReadWrite.All\" or AppRole has \"RoleManagement.ReadWrite.Directory\" or AppRole has \"AppRoleAssignment.ReadWrite.All\" or AppRole has \"Application.ReadWrite.All\"\r\n| project TimeGenerated, OperationName, InitiatedByUPN, AppRole, ServicePrincipalName, ServicePrincipalObjectID",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "PrivilegeEscalation"
+      ],
+      "techniques": [
+        "T1098"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

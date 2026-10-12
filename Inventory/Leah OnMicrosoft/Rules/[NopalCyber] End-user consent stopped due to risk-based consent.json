@@ -1,0 +1,109 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "false",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T08:54:30.3298949Z",
+    "name": "[NopalCyber] End-user consent stopped due to risk-based consent",
+    "native_rule_id": "b20f8b94-ee0f-441f-b209-d446fd4348c8",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"39006294-0000-0d00-0000-68f5f8c60000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/b20f8b94-ee0f-441f-b209-d446fd4348c8",
+    "kind": "Scheduled",
+    "name": "b20f8b94-ee0f-441f-b209-d446fd4348c8",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "customDetails": {},
+      "description": "Detects a user's consent to an OAuth application being blocked due to it being too risky.\nThese events should be investigated to understand why the user attempted to consent to the applicaiton and what other applicaitons they may have consented to",
+      "displayName": "[NopalCyber] End-user consent stopped due to risk-based consent",
+      "enabled": false,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingUserPrincipalName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "InitiatingAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAccountUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAadUserId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingIPAddress",
+              "identifier": "Address"
+            }
+          ]
+        },
+        {
+          "entityType": "CloudApplication",
+          "fieldMappings": [
+            {
+              "columnName": "TargetAppId",
+              "identifier": "AppId"
+            },
+            {
+              "columnName": "TargetAppName",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T08:54:30.3298949Z",
+      "query": " AuditLogs\r\n    | where OperationName has \"Consent to application\"\r\n    | where Result =~ \"failure\"\r\n    | extend InitiatingUserPrincipalName = tostring(InitiatedBy.user.userPrincipalName)\r\n    | extend InitiatingAadUserId = tostring(InitiatedBy.user.id)\r\n    | extend InitiatingIPAddress = tostring(InitiatedBy.user.ipAddress)\r\n    | extend userAgent = iif(AdditionalDetails[0].key == \"User-Agent\", tostring(AdditionalDetails[0].value), tostring(AdditionalDetails[1].value))\r\n    | where isnotempty(TargetResources)\r\n    | extend TargetAppName = tostring(TargetResources[0].displayName)\r\n    | extend TargetAppId = tostring(TargetResources[0].id)\r\n    | mv-expand TargetResources[0].modifiedProperties\r\n    | extend TargetResources_0_modifiedProperties = columnifexists(\"TargetResources_0_modifiedProperties\", '')\r\n    | where isnotempty(TargetResources_0_modifiedProperties)\r\n    | where TargetResources_0_modifiedProperties.displayName =~ \"MethodExecutionResult.\"\r\n    | extend TargetPropertyDisplayName = tostring(TargetResources_0_modifiedProperties.displayName)\r\n    | extend FailureReason = tostring(parse_json(tostring(TargetResources_0_modifiedProperties.newValue)))\r\n    | where FailureReason contains \"Risky\"\r\n    | extend InitiatingAccountName = tostring(split(InitiatingUserPrincipalName, \"@\")[0]), InitiatingAccountUPNSuffix = tostring(split(InitiatingUserPrincipalName, \"@\")[1])\r\n    | project-reorder TimeGenerated, OperationName, Result, TargetAppName, TargetAppId, FailureReason, InitiatingUserPrincipalName, InitiatingAadUserId, InitiatingIPAddress, userAgent",
+      "queryFrequency": "PT3H",
+      "queryPeriod": "PT3H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence",
+        "PrivilegeEscalation"
+      ],
+      "techniques": [
+        "T1078"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

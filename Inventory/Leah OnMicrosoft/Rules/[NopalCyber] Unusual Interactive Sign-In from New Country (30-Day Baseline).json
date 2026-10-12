@@ -1,0 +1,77 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-09-30T09:26:04.6184347Z",
+    "name": "[NopalCyber] Unusual Interactive Sign-In from New Country (30-Day Baseline)",
+    "native_rule_id": "17329540-960a-41ba-a063-9f90ce9fd813",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"0701b7ff-0000-0d00-0000-6abcd5ad0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/17329540-960a-41ba-a063-9f90ce9fd813",
+    "kind": "Scheduled",
+    "name": "17329540-960a-41ba-a063-9f90ce9fd813",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection identifies interactive sign-ins from countries that a user has not accessed from in the past 30 days, based on successful logins. It highlights unusual geographic access patterns, such as remote work via VPNs, possible account compromise, or other travel-related anomalies.",
+      "displayName": "[NopalCyber] Unusual Interactive Sign-In from New Country (30-Day Baseline)",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "Name"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-09-30T09:26:04.6184347Z",
+      "query": "// 1. Baseline: Countries with at least 2 interactive successful sign-ins over the last 30 days\nlet ExcludeIPRanges =_GetWatchlist('NetworkAddresses')\n    | project SearchKey;\n//let LeahIPRanges = toscalar(ExcludeIPRanges); // <-- this makes it a single scalar value\nlet BaselineCountries =\n    SigninLogs\n    | where TimeGenerated between (ago(30d) .. ago(1d))\n    | where ResultType == 0\n    | where IsInteractive == true   // Only user-driven interactive sign-ins\n    | where not(IPAddress in(\"172.105.39.222\")) //PE-130\n    | extend Country = tostring(LocationDetails[\"countryOrRegion\"])\n    | summarize CountryCount = count() by UserPrincipalName, Country\n    | where CountryCount >= 2\n    | summarize KnownCountries = make_set(Country) by UserPrincipalName;\n// 2. Current: Interactive successful sign-ins in the last 24 hours\nSigninLogs\n| where TimeGenerated > ago(1d)\n| where ResultType == 0\n| where IsInteractive == true\n| where not (IPAddress in (ExcludeIPRanges)) \n| where not(IPAddress in(\"172.105.39.222\")) //PE-130\n| extend Country = tostring(LocationDetails[\"countryOrRegion\"])\n// 3. Join baseline and identify new/unusual countries\n| join kind = leftouter BaselineCountries on UserPrincipalName\n| where not(set_has_element(KnownCountries, Country))\n// 4. Output results for investigation\n| project\n    TimeGenerated,\n    UserPrincipalName,\n    Country,\n    IPAddress,\n    AppDisplayName,\n    ClientAppUsed,\n    UserAgent,\n    LocationDetails\n\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P14D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "ResourceDevelopment"
+      ],
+      "techniques": [
+        "T1586"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

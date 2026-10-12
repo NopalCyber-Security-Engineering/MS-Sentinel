@@ -1,0 +1,78 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-05-14T12:11:22.1636375Z",
+    "name": "[NopalCyber] Front Door Classic WAF - XSS Detection",
+    "native_rule_id": "3106caa2-db0f-496e-9de5-16e318ec4c0c",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"5b018c1f-0000-0d00-0000-6a05bbea0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/3106caa2-db0f-496e-9de5-16e318ec4c0c",
+    "kind": "Scheduled",
+    "name": "3106caa2-db0f-496e-9de5-16e318ec4c0c",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Identifies a match for an XSS attack in the Front Door Classic WAF logs. The threshold value in the query can be changed as per your infrastructure's requirements.\n References: https://owasp.org/www-project-top-ten/2017/A7_2017-Cross-Site_Scripting_(XSS)",
+      "displayName": "[NopalCyber] Front Door Classic WAF - XSS Detection",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "URL",
+          "fieldMappings": [
+            {
+              "columnName": "URI_s",
+              "identifier": "Url"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "clientIP_s",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-05-14T12:11:22.1636375Z",
+      "query": "let Threshold = 1;\r\nAzureDiagnostics\r\n| where Category =~ \"FrontDoorWebApplicationFirewallLog\"\r\n| where action_s <> \"Block\"\r\n//| where action_s =~ \"AnomalyScoring\"\r\n| where details_msg_s has \"XSS\"\r\n| parse details_data_s with MessageText \"Matched Data:\" MatchedData \"AND \" * \"table_name FROM \" TableName \" \" *\r\n| project trackingReference_s, host_s, requestUri_s, TimeGenerated, clientIP_s, details_matches_s, details_msg_s, details_data_s, TableName, MatchedData\r\n| join kind = inner(\r\nAzureDiagnostics\r\n| where Category =~ \"FrontDoorWebApplicationFirewallLog\"\r\n| where action_s !in (\"Blocked\" ,\"Block\")) on trackingReference_s\r\n| summarize URI_s = make_set(requestUri_s,100), Table = make_set(TableName,100), StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), TrackingReference = make_set(trackingReference_s,100), Matched_Data = make_set(MatchedData,100), Detail_Data = make_set(details_data_s,100), Detail_Message = make_set(details_msg_s,100), Total_TrackingReference = dcount(trackingReference_s) by clientIP_s, host_s, action_s\r\n| where Total_TrackingReference >= Threshold",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "High",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T0819",
+        "T1190"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T07:29:11.7949265Z",
+    "name": "[NopalCyber] Suspicious Graph API Activity from Known Malicious Pre-Consented Apps",
+    "native_rule_id": "7409a6fb-2348-4542-a766-1d82d22c546a",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900426b-0000-0d00-0000-68f5e4c80000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/7409a6fb-2348-4542-a766-1d82d22c546a",
+    "kind": "Scheduled",
+    "name": "7409a6fb-2348-4542-a766-1d82d22c546a",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule detects successful Microsoft Graph API operations initiated by known malicious or risky pre-consented OAuth applications. It leverages the GraphPreConsent IOC list to identify suspicious AppIds (Client_Ids) and correlates them with MicrosoftGraphActivityLogs where the request method involves data modification (POST, PATCH, PUT, DELETE) and the response status indicates success (e.g., 200, 201).\n\nBy summarizing activity volume and user involvement, this rule helps uncover potential illicit consent grant attacks, where adversaries exploit trusted-looking apps to gain excessive access to tenant data. It flags apps with more than 5 successful operations in the past 7 days, enabling security teams to investigate and respond to unauthorized or stealthy data access",
+      "displayName": "[NopalCyber] Suspicious Graph API Activity from Known Malicious Pre-Consented Apps",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T07:29:11.7949265Z",
+      "query": "let GraphPreConsent = externaldata(Name:string, Client_Id:string, Enabled:string, Graph_api_permissions:string, \r\nAuth_code:string, Device_code:string, Brk_refresh:string, Foci:string, Reply_addresses:string)\r\n[h'https://raw.githubusercontent.com/SlimKQL/Hunting-Queries-Detection-Rules/refs/heads/main/IOC/GraphPreConsent.csv'];\r\n//let SafeApps = dynamic([\"contoso-helpdesk\", \"microsoft-teams\", \"outlook-service\"]);\r\n//let TrustedApps = dynamic([\"00000003-0000-0000-c000-000000000000\"]);\r\nMicrosoftGraphActivityLogs\r\n| where TimeGenerated > ago(7d)\r\n| where RequestMethod  has_any (\"POST\", \"PATCH\", \"PUT\", \"DELETE\")\r\n| where ResponseStatusCode in (\"200\" , \"201\" , \"203\", \"204\" , \"205\" , \"206\") //For Succesful status codes\r\n| join kind=innerunique GraphPreConsent on $left.AppId == $right.Client_Id\r\n//| where AppId !in (TrustedApps) and Name !in (SafeApps)\r\n| summarize ActivityCount = count(), Users = make_set(UserId, 10) //, Permissions = make_set(Graph_api_permissions, 5)\r\n  by AppId, Name, IPAddress, Client_Id, RequestMethod, RequestUri\r\n| where ActivityCount > 5\r\n",
+      "queryFrequency": "P7D",
+      "queryPeriod": "P7D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CredentialAccess"
+      ],
+      "techniques": [
+        "T1528"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

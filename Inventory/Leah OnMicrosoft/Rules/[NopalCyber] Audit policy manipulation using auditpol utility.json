@@ -1,0 +1,85 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-07T07:16:26.3066517Z",
+    "name": "[NopalCyber] Audit policy manipulation using auditpol utility",
+    "native_rule_id": "16605dfa-c678-4ea1-ac4d-958f427bbf11",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"1e02eb87-0000-0d00-0000-690d9ccb0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/16605dfa-c678-4ea1-ac4d-958f427bbf11",
+    "kind": "Scheduled",
+    "name": "16605dfa-c678-4ea1-ac4d-958f427bbf11",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detects attempts to manipulate audit policies using auditpol command. This technique was seen in relation to Solorigate attack but the results can indicate potential malicious activity used in different attacks",
+      "displayName": "[NopalCyber] Audit policy manipulation using auditpol utility",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Account",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "AccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "AccountDomain",
+              "identifier": "NTDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Computer",
+              "identifier": "HostName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-07T07:16:26.3066517Z",
+      "query": "let timeframe = 1d;\nlet AccountAllowList = dynamic(['SYSTEM']);\nlet SubCategoryList = dynamic([\"Logoff\", \"Account Lockout\", \"User Account Management\", \"Authorization Policy Change\"]); // Add any Category in the list to be allowed or disallowed\nlet tokens = dynamic([\"clear\", \"remove\", \"success:disable\", \"failure:disable\"]); \n(union isfuzzy=true\n    (\n    SecurityEvent\n    | where TimeGenerated >= ago(timeframe)\n    //| where Process =~ \"auditpol.exe\" \n    | where CommandLine has_any (tokens)\n    | where AccountType !~ \"Machine\" and Account !in~ (AccountAllowList)\n    | parse CommandLine with * \"/subcategory:\" subcategorytoken\n    | extend\n        SubCategory = tostring(split(subcategorytoken, \"\\\"\")[1]),\n        Toggle =  tostring(split(subcategorytoken, \"\\\"\")[2])\n    | where SubCategory in~ (SubCategoryList) //use in~ for inclusion or !in~ for exclusion\n    | where Toggle !in~ (\"/failure:disable\", \" /success:enable /failure:disable\") // use this filter if required to exclude certain toggles\n    | project\n        TimeGenerated,\n        Computer,\n        Account,\n        SubjectDomainName,\n        SubjectUserName,\n        Process,\n        ParentProcessName,\n        CommandLine,\n        SubCategory,\n        Toggle\n    | extend\n        timestamp = TimeGenerated,\n        AccountName = SubjectUserName,\n        AccountDomain = SubjectDomainName,\n        DeviceName = Computer\n    ),\n    (\n    DeviceProcessEvents\n    | where TimeGenerated >= ago(timeframe)\n    // | where InitiatingProcessFileName =~ \"auditpol.exe\" \n    | where InitiatingProcessCommandLine has_any (tokens)\n    | where AccountName !in~ (AccountAllowList)\n    | parse InitiatingProcessCommandLine with * \"/subcategory:\" subcategorytoken\n    | extend\n        SubCategory = tostring(split(subcategorytoken, \"\\\"\")[1]),\n        Toggle =  tostring(split(subcategorytoken, \"\\\"\")[2])\n    | where SubCategory in~ (SubCategoryList) //use in~ for inclusion or !in~ for exclusion\n    | where Toggle !in~ (\"/failure:disable\", \" /success:enable /failure:disable\") // use this filter if required to exclude certain toggles\n    | project\n        TimeGenerated,\n        DeviceName,\n        AccountName,\n        InitiatingProcessAccountDomain,\n        InitiatingProcessAccountName,\n        InitiatingProcessFileName,\n        InitiatingProcessParentFileName,\n        InitiatingProcessCommandLine,\n        SubCategory,\n        Toggle\n    | extend\n        timestamp = TimeGenerated,\n        AccountName = InitiatingProcessAccountName,\n        AccountDomain = InitiatingProcessAccountDomain\n    ),\n    (\n    Event\n    | where TimeGenerated > ago(timeframe)\n    | where Source == \"Microsoft-Windows-Sysmon\"\n    | where EventID == 1\n    | extend EventData = parse_xml(EventData).DataItem.EventData.Data\n    | mv-expand bagexpansion=array EventData\n    | evaluate bag_unpack(EventData)\n    | extend Key=tostring(['@Name']), Value=['#text']\n    | evaluate pivot(Key, any(Value), TimeGenerated, Source, EventLog, Computer, EventLevel, EventLevelName, EventID, UserName, RenderedDescription, MG, ManagementGroupName, Type, _ResourceId)\n    // | where OriginalFileName =~ \"auditpol.exe\"\n    | where CommandLine has_any (tokens)\n    | where User !in~ (AccountAllowList)\n    | parse CommandLine with * \"/subcategory:\" subcategorytoken\n    | extend\n        SubCategory = tostring(split(subcategorytoken, \"\\\"\")[1]),\n        Toggle =  tostring(split(subcategorytoken, \"\\\"\")[2])\n    | where SubCategory in~ (SubCategoryList) //use in~ for inclusion or !in~ for exclusion\n    | where Toggle !in~ (\"/failure:disable\", \" /success:enable /failure:disable\") // use this filter if required to exclude certain toggles\n    | project\n        TimeGenerated,\n        Computer,\n        User,\n        Process,\n        ParentImage,\n        CommandLine,\n        SubCategory,\n        Toggle\n    | extend\n        timestamp = TimeGenerated,\n        AccountName = tostring(split(User, @'\\')[1]),\n        AccountUPNSuffix = tostring(split(User, @'\\')[0]),\n        DeviceName = Computer\n    )\n)\n| extend Account = strcat(AccountDomain, \"\\\\\", AccountName)\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Execution"
+      ],
+      "techniques": [
+        "T1204"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

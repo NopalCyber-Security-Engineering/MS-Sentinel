@@ -1,0 +1,7 @@
+{
+  "client": "client-a",
+  "display_name": "Leah OnMicrosoft",
+  "platform": "microsoft-sentinel",
+  "rule_count": 356,
+  "source": "Detection Platform inventory"
+}

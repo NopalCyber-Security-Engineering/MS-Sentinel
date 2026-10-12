@@ -1,0 +1,77 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-08T09:32:11.7076666Z",
+    "name": "DopplePaymer Procdump",
+    "native_rule_id": "61833cdf-4ab8-472a-9c62-cbce99262aa8",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4e02cb16-0000-0d00-0000-690f0e1d0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/61833cdf-4ab8-472a-9c62-cbce99262aa8",
+    "kind": "Scheduled",
+    "name": "61833cdf-4ab8-472a-9c62-cbce99262aa8",
+    "properties": {
+      "alertRuleTemplateName": "1be34fb9-f81b-47ae-84fb-465e6686d76c",
+      "description": "This query was originally published in the threat analytics report, Doppelpaymer: More human-operated ransomware. There is also a related blog.\nDoppelPaymer is ransomware that is spread manually by human operators. These operators have exhibited extensive knowledge of system administration and common network security misconfigurations. For example, they use SysInternal utilities such as ProcDump to dump credentials from LSASS. They often use these stolen credentials to turn off security software, run malicious commands, and spread malware throughout an organization.\nThe following query detects ProcDump being used to dump credentials from LSASS.\nThe See also section below lists links to other queries associated with DoppelPaymer.\nReferences:\nhttps://msrc-blog.microsoft.com/2019/11/20/customer-guidance-for-the-dopplepaymer-ransomware/\nhttps://www.microsoft.com/en-us/wdsi/threats/malware-encyclopedia-description?Name=Ransom:Win32/DoppelPaymer.KM!MTB\nhttps://docs.microsoft.com/sysinternals/downloads/procdump\nhttps://docs.microsoft.com/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection",
+      "displayName": "DopplePaymer Procdump",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "DeviceName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "DnsDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-08T09:32:11.7076666Z",
+      "query": "// Dumping of LSASS memory using procdump\nDeviceProcessEvents\n// Command lines that include \"lsass\" and -accepteula or -ma flags used in procdump\n| where (ProcessCommandLine has \"lsass\" and (ProcessCommandLine has \"-accepteula\" or\nProcessCommandLine contains \"-ma\"))\n// Omits possible FPs where the full command is just \"procdump.exe lsass\"\nor (FileName in~ ('procdump.exe','procdump64.exe') and ProcessCommandLine has 'lsass')\n| extend HostName = iff(DeviceName has '.', substring(DeviceName, 0, indexof(DeviceName, '.')), DeviceName)\n| extend DnsDomain = iff(DeviceName has '.', substring(DeviceName, indexof(DeviceName, '.') + 1), \"\")\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "High",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CredentialAccess"
+      ],
+      "techniques": [
+        "T1003"
+      ],
+      "templateVersion": "1.0.0",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T07:19:06.841138Z",
+    "name": "[NopalCyber] Login attempt by Blocked MFA user",
+    "native_rule_id": "4b00cdfe-2cdc-4f44-8768-ccb47f98e6d4",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2800789d-0000-0d00-0000-68eca7eb0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/4b00cdfe-2cdc-4f44-8768-ccb47f98e6d4",
+    "kind": "Scheduled",
+    "name": "4b00cdfe-2cdc-4f44-8768-ccb47f98e6d4",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "'An account could be blocked if there are too many failed authentication attempts in a row. This hunting query identifies if a MFA user account that is set to blocked tries to login to Microsoft Entra ID.\nThis query has also been updated to include UEBA logs IdentityInfo and BehaviorAnalytics for contextual information around the results.'",
+      "displayName": "[NopalCyber] Login attempt by Blocked MFA user",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "Name"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T07:19:06.841138Z",
+      "query": " let riskScoreCutoff = 20; //Adjust this based on volume of results\r\n  let starttime = todatetime('{{StartTimeISO}}');\r\n  let endtime = todatetime('{{EndTimeISO}}');\r\n  let lookback = starttime - 7d;\r\n  let isGUID = \"[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}\";\r\n  let MFABlocked = SigninLogs\r\n  | where TimeGenerated between(starttime..endtime)\r\n  | where ResultType != \"0\"\r\n  | extend StatusCode = tostring(Status.errorCode), StatusDetails = tostring(Status.additionalDetails), Status = strcat(ResultType, \": \", ResultDescription)\r\n  | where StatusDetails =~ \"MFA denied; user is blocked\"\r\n  | extend Unresolved = iff(Identity matches regex isGUID, true, false);\r\n  // Lookup up resolved identities from last 7 days\r\n  let identityLookup = SigninLogs\r\n  | where TimeGenerated between(lookback..starttime)\r\n  | where not(Identity matches regex isGUID)\r\n  | summarize by UserId, lu_UserDisplayName = UserDisplayName, lu_UserPrincipalName = UserPrincipalName;\r\n  // Join resolved names to unresolved list from MFABlocked signins\r\n  let unresolvedNames = MFABlocked | where Unresolved == true | join kind= inner (\r\n   identityLookup\r\n  ) on UserId\r\n  | extend UserDisplayName = lu_UserDisplayName, UserPrincipalName = lu_UserPrincipalName\r\n  | project-away lu_UserDisplayName, lu_UserPrincipalName;\r\n  // Join Signins that had resolved names with list of unresolved that now have a resolved name\r\n  let u_MFABlocked = MFABlocked | where Unresolved == false | union unresolvedNames;\r\n  u_MFABlocked\r\n  | extend OS = tostring(DeviceDetail.operatingSystem), Browser = tostring(DeviceDetail.browser)\r\n  | extend FullLocation = strcat(Location,'|', LocationDetails.state, '|', LocationDetails.city)\r\n  | summarize TimeGenerated = make_list(TimeGenerated), Status = make_list(Status), IPAddresses = make_list(IPAddress), IPAddressCount = dcount(IPAddress),\r\n    AttemptCount = count() by UserPrincipalName, UserId, UserDisplayName, AppDisplayName, Browser, OS, FullLocation , CorrelationId\r\n  | mvexpand TimeGenerated, IPAddresses, Status\r\n  | extend TimeGenerated = todatetime(tostring(TimeGenerated)), IPAddress = tostring(IPAddresses), Status = tostring(Status)\r\n  | project-away IPAddresses\r\n  | summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated) by UserPrincipalName, UserId, UserDisplayName, Status,  IPAddress, IPAddressCount, AppDisplayName, Browser, OS, FullLocation\r\n  | extend timestamp = StartTime, UserPrincipalName = tolower(UserPrincipalName), Account_0_Name = UserPrincipalName, IP_0_Address = IPAddress\r\n  | join kind=leftouter (\r\n      IdentityInfo\r\n      | summarize LatestReportTime = arg_max(TimeGenerated, *) by AccountUPN\r\n      | project AccountUPN, Tags, JobTitle, GroupMembership, AssignedRoles, UserType, IsAccountEnabled\r\n      | summarize\r\n          Tags = make_set(Tags, 1000),\r\n          GroupMembership = make_set(GroupMembership, 1000),\r\n          AssignedRoles = make_set(AssignedRoles, 1000),\r\n          UserType = make_set(UserType, 1000),\r\n          UserAccountControl = make_set(UserType, 1000)\r\n      by AccountUPN\r\n      | extend UserPrincipalName=tolower(AccountUPN)\r\n  ) on UserPrincipalName\r\n  | join kind=leftouter (\r\n      BehaviorAnalytics\r\n      | where ActivityType in (\"FailedLogOn\", \"LogOn\")\r\n      | where isnotempty(SourceIPAddress)\r\n      | project UsersInsights, DevicesInsights, ActivityInsights, InvestigationPriority, SourceIPAddress\r\n      | project-rename IPAddress = SourceIPAddress\r\n      | summarize\r\n          UsersInsights = make_set(UsersInsights, 1000),\r\n          DevicesInsights = make_set(DevicesInsights, 1000),\r\n          IPInvestigationPriority = sum(InvestigationPriority)\r\n      by IPAddress\r\n  ) on IPAddress\r\n  | extend UEBARiskScore = IPInvestigationPriority\r\n  | where UEBARiskScore > riskScoreCutoff\r\n  | sort by UEBARiskScore desc",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P7D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "DefenseEvasion",
+        "Persistence",
+        "PrivilegeEscalation",
+        "CredentialAccess"
+      ],
+      "techniques": [
+        "T1078",
+        "T1098",
+        "T1187"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

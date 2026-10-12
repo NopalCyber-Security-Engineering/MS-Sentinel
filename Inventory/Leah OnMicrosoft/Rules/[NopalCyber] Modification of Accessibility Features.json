@@ -1,0 +1,118 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-16T07:53:20.5892327Z",
+    "name": "[NopalCyber] Modification of Accessibility Features",
+    "native_rule_id": "a0662c20-dd72-43d3-8835-a56f759711b4",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3000cba9-0000-0d00-0000-68f0a4710000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/a0662c20-dd72-43d3-8835-a56f759711b4",
+    "kind": "Scheduled",
+    "name": "a0662c20-dd72-43d3-8835-a56f759711b4",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Adversaries may establish persistence and/or elevate privileges by executing malicious content triggered by accessibility features. Windows contains accessibility features that may be launched with a key combination before a user has logged in (ex: when the user is on the Windows logon screen). An adversary can modify the way these programs are launched to get a command prompt or backdoor without logging in to the system.\nTwo common accessibility programs are C:\\Windows\\System32\\sethc.exe, launched when the shift key is pressed five times and C:\\Windows\\System32\\utilman.exe, launched when the Windows + U key combination is pressed. The sethc.exe program is often referred to as \"sticky keys\", and has been used by adversaries for unauthenticated access through a remote desktop login screen.",
+      "displayName": "[NopalCyber] Modification of Accessibility Features",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Process",
+          "fieldMappings": [
+            {
+              "columnName": "CommandLine",
+              "identifier": "CommandLine"
+            },
+            {
+              "columnName": "ProcessId",
+              "identifier": "ProcessId"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Computer",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "HostNameDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "User",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "AccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "AccountNTDomain",
+              "identifier": "NTDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "File",
+          "fieldMappings": [
+            {
+              "columnName": "ImageFileName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "ImageDirectory",
+              "identifier": "Directory"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-16T07:53:20.5892327Z",
+      "query": "  let ImagesList = dynamic ([\"sethc.exe\",\"utilman.exe\",\"osk.exe\",\"Magnify.exe\",\"Narrator.exe\",\"DisplaySwitch.exe\",\"AtBroker.exe\"]); \r\n  let OriginalFileNameList = dynamic ([\"sethc.exe\",\"utilman.exe\",\"osk.exe\",\"Magnify.exe\",\"Narrator.exe\",\"DisplaySwitch.exe\",\"AtBroker.exe\",\"SR.exe\",\"utilman2.exe\",\"ScreenMagnifier.exe\"]); \r\n  Event\r\n  | where EventLog == \"Microsoft-Windows-Sysmon/Operational\" and EventID==1\r\n  | parse EventData with * 'ProcessId\">' ProcessId \"<\" * 'Image\">' Image \"<\" * 'OriginalFileName\">' OriginalFileName \"<\" *\r\n  | where Image has_any (ImagesList) and not (OriginalFileName has_any (OriginalFileNameList))\r\n  | parse EventData with * 'ProcessGuid\">' ProcessGuid \"<\" * 'Description\">' Description \"<\" * 'CommandLine\">' CommandLine \"<\" * 'CurrentDirectory\">' CurrentDirectory \"<\" * 'User\">' User \"<\" * 'LogonGuid\">' LogonGuid \"<\" * 'Hashes\">' Hashes \"<\" * 'ParentProcessGuid\">' ParentProcessGuid \"<\" * 'ParentImage\">' ParentImage \"<\" * 'ParentCommandLine\">' ParentCommandLine \"<\" * 'ParentUser\">' ParentUser \"<\" *\r\n  | summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated) by EventID, Computer, User, ParentImage, ParentProcessGuid, ParentCommandLine, ParentUser, Image, ProcessId, ProcessGuid, CommandLine, Description, OriginalFileName, CurrentDirectory, Hashes\r\n  | extend HostName = tostring(split(Computer, \".\")[0]), DomainIndex = toint(indexof(Computer, '.'))\r\n  | extend HostNameDomain = iff(DomainIndex != -1, substring(Computer, DomainIndex + 1), Computer)\r\n  | extend AccountName = tostring(split(User, \"\\\\\")[1]), AccountNTDomain = tostring(split(User, \"\\\\\")[0])\r\n  | extend ImageFileName = tostring(split(Image, \"\\\\\")[-1])\r\n  | extend ImageDirectory = replace_string(Image, ImageFileName, \"\")\r\n  | project-away DomainIndex",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence",
+        "PrivilegeEscalation"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

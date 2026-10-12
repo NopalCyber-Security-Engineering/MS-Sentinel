@@ -1,0 +1,68 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T11:48:19.7296892Z",
+    "name": "[NopalCyber] Detect Entra Token Request via BOF File (IOC based)",
+    "native_rule_id": "a06a5c2a-426d-4f64-8471-d80c8dfdeb7d",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2900d13c-0000-0d00-0000-68ece7040000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/a06a5c2a-426d-4f64-8471-d80c8dfdeb7d",
+    "kind": "Scheduled",
+    "name": "a06a5c2a-426d-4f64-8471-d80c8dfdeb7d",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule will help to detect if there is a Beacon Object File out there which can be used to directly request Entra ID access tokens from an active beacon on a device using a specific User Agent, we can easily detect this beacon file by flagging the funny user agent and / or scope identifier that is used",
+      "displayName": "[NopalCyber] Detect Entra Token Request via BOF File (IOC based)",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T11:48:19.7296892Z",
+      "query": "AADNonInteractiveUserSignInLogs\r\n| where TimeGenerated > ago(1m)\r\n| where UserAgent contains \"ur mum\" \r\n| where ResourceIdentity == \"797f4846-ba00-4fd7-ba43-dac1f8f63013\"",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "Low",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T1664"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

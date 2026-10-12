@@ -1,0 +1,68 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T07:22:18.146531Z",
+    "name": "[NopalCyber] Suspicious Brute Force Activity (Failures Only)",
+    "native_rule_id": "b213c30d-943d-4f30-9857-e81c99125b4d",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900a368-0000-0d00-0000-68f5e32c0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/b213c30d-943d-4f30-9857-e81c99125b4d",
+    "kind": "Scheduled",
+    "name": "b213c30d-943d-4f30-9857-e81c99125b4d",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection identifies suspicious authentication failure patterns that may indicate brute-force attacks. It detects four common scenarios:\n\n- Repeated failed login attempts to a single account from a single IP address.\n- Distributed login attempts to a single account from multiple IPs.\n- A single IP address targeting multiple accounts.\n- Broad-scale attempts involving multiple accounts and multiple IPs in a short timeframe.",
+      "displayName": "[NopalCyber] Suspicious Brute Force Activity (Failures Only)",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T07:22:18.146531Z",
+      "query": "let TimeWindow = 10m;       // Time range to analyze\nlet Threshold = 20;          // Minimum number of failed attempts required\nlet Lookback = 1h;          // Total lookback window for hunting (data scanning)\nlet SuccesfulSigninIPs = SigninLogs\n| where TimeGenerated > ago(Lookback)\n| where ResultType == 0\n| where IsInteractive == true\n| where ConditionalAccessStatus == \"success\"\n| where DeviceDetail.isManaged == true and DeviceDetail.trustType == \"Azure AD joined\"\n| distinct IPAddress;\n// === Step 1: Filter relevant sign-in logs ===\nlet FilteredSigninLogs = \n    SigninLogs\n    | where ResultSignature == \"FAILURE\"\n    | where TimeGenerated > ago(Lookback);\n// === Step 2: Summarize login activity by Account and IP ===\nFilteredSigninLogs\n| summarize\n    FailedAttempts = count(),\n    UniqueIPs = dcount(IPAddress),\n    UniqueAccounts = dcount(UserPrincipalName),\n    FirstSeen = min(TimeGenerated),\n    LastSeen = max(TimeGenerated)\n    by UserPrincipalName, IPAddress\n// === Step 3: Calculate time span of activity and apply pattern classification ===\n| extend TimeSpan = LastSeen - FirstSeen\n| where TimeSpan <= TimeWindow and FailedAttempts >= Threshold\n// === Step 4: Classify behavior based on counts using case() logic ===\n| extend Pattern = case(\n                       UniqueIPs == 1 and UniqueAccounts == 1,\n                       \"One account from one IP\",\n                       UniqueIPs > 1 and UniqueAccounts == 1,\n                       \"One account from multiple IPs\",\n                       UniqueIPs == 1 and UniqueAccounts > 1,\n                       \"Multiple accounts from one IP\",\n                       UniqueIPs > 1 and UniqueAccounts > 1,\n                       \"Multiple accounts from multiple IPs\",\n                       \"No pattern\"\n                   )\n// === Step 5: Filter out unmatched results and label ===\n| where Pattern != \"No pattern\"\n| extend AttackCategory = \"Brute Force\"\n| where IPAddress !in (SuccesfulSigninIPs)\n\n",
+      "queryFrequency": "PT10M",
+      "queryPeriod": "PT1H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CredentialAccess"
+      ],
+      "techniques": [
+        "T1110"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-09-08T10:23:53.2869879Z",
+    "name": "[NopalCyber] URL Added to Application from Unknown Domain",
+    "native_rule_id": "a7efcb82-8b30-43b9-8cfc-d5ff7eca0d7e",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"5e09b477-0000-0d00-0000-6a9fe23a0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/a7efcb82-8b30-43b9-8cfc-d5ff7eca0d7e",
+    "kind": "Scheduled",
+    "name": "a7efcb82-8b30-43b9-8cfc-d5ff7eca0d7e",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Detects a URL being added to an application where the domain is not one that is associated with the tenant.\nThe query uses domains seen in sign in logs to determine if the domain is associated with the tenant.\nApplications associated with URLs not controlled by the organization can pose a security risk",
+      "displayName": "[NopalCyber] URL Added to Application from Unknown Domain",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "URL",
+          "fieldMappings": [
+            {
+              "columnName": "AddedUrls",
+              "identifier": "Url"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAppName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAppServicePrincipalId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingUserPrincipalName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "InitiatingAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAccountUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAadUserId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingIPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": true,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-09-08T10:23:53.2869879Z",
+      "query": "let domains =\r\n    SigninLogs\r\n    | where ResultType == 0\r\n    | extend domain = split(UserPrincipalName, \"@\")[1]\r\n    | extend domain = tostring(split(UserPrincipalName, \"@\")[1])\r\n    | summarize by tolower(tostring(domain));\r\n    AuditLogs\r\n    | where Category =~ \"ApplicationManagement\"\r\n    | where Result =~ \"success\"\r\n    | where OperationName =~ 'Update Application'\r\n    | mv-expand TargetResources\r\n    | mv-expand TargetResources.modifiedProperties\r\n    | where TargetResources_modifiedProperties.displayName =~ \"AppAddress\"\r\n    | extend Key = tostring(TargetResources_modifiedProperties.displayName)\r\n    | extend NewValue = TargetResources_modifiedProperties.newValue\r\n    | extend OldValue = TargetResources_modifiedProperties.oldValue\r\n    | where isnotempty(Key) and isnotempty(NewValue)\r\n    | project-reorder Key, NewValue, OldValue\r\n    | extend NewUrls = extract_all('\"Address\":([^,]*)', tostring(NewValue))\r\n    | extend OldUrls = extract_all('\"Address\":([^,]*)', tostring(OldValue))\r\n    | extend AddedUrls = set_difference(NewUrls, OldUrls)\r\n    | where array_length(AddedUrls) > 0\r\n    | extend UserAgent = iif(tostring(AdditionalDetails[0].key) == \"User-Agent\", tostring(AdditionalDetails[0].value), \"\")\r\n    | extend InitiatingAppName = tostring(InitiatedBy.app.displayName)\r\n    | extend InitiatingAppServicePrincipalId = tostring(InitiatedBy.app.servicePrincipalId)\r\n    | extend InitiatingUserPrincipalName = tostring(InitiatedBy.user.userPrincipalName)\r\n    | extend InitiatingAadUserId = tostring(InitiatedBy.user.id)\r\n    | extend InitiatingIPAddress = tostring(InitiatedBy.user.ipAddress)\r\n    | extend InitiatedBy = tostring(iff(isnotempty(InitiatingUserPrincipalName),InitiatingUserPrincipalName, InitiatingAppName))\r\n    | extend AppDisplayName = tostring(TargetResources.displayName)\r\n    | where isnotempty(AddedUrls)\r\n    | mv-expand AddedUrls\r\n    | extend AddedUrls = trim(@'\"', tostring(AddedUrls))\r\n    | extend Domain = extract(\"^(?:https?:\\\\/\\\\/)?(?:[^@\\\\/\\\\n]+@)?(?:www\\\\.)?([^:\\\\/?\\\\n]+)/\", 1, replace_string(tolower(AddedUrls), '\"', \"\"))\r\n    | where isnotempty(Domain)\r\n    | extend Domain = strcat(split(Domain, \".\")[-2], \".\", split(Domain, \".\")[-1])\r\n    | where Domain !in (domains)\r\n    | where not (Domain in (\"leahai.com\" , \"leah.com\" ,\"contractpod.onmicrosoft.com\" , \"contractpodai.com\"))\r\n    | project-reorder TimeGenerated, AppDisplayName, AddedUrls, InitiatedBy, UserAgent, InitiatingIPAddress\r\n    | extend InitiatingAccountName = tostring(split(InitiatingUserPrincipalName, \"@\")[0]), InitiatingAccountUPNSuffix = tostring(split(InitiatingUserPrincipalName, \"@\")[1])",
+      "queryFrequency": "PT2H",
+      "queryPeriod": "PT2H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence",
+        "PrivilegeEscalation"
+      ],
+      "techniques": [
+        "T1078"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-07T09:21:17.1211316Z",
+    "name": "[NopalCyber] New user created and added to the built-in administrators group",
+    "native_rule_id": "b5b71cc3-5211-44a2-ab15-1274dbd79b19",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"25025c2c-0000-0d00-0000-690dba0d0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/b5b71cc3-5211-44a2-ab15-1274dbd79b19",
+    "kind": "Scheduled",
+    "name": "b5b71cc3-5211-44a2-ab15-1274dbd79b19",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Identifies when a user account was created and then added to the builtin Administrators group in the same day",
+      "displayName": "[NopalCyber] New user created and added to the built-in administrators group",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountUsedToCreateUser",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "CreatedByAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "CreatedByDomainName",
+              "identifier": "NTDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountThatAddedUser",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "AddedByAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "AddedByDomainName",
+              "identifier": "NTDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "CreatedUser",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "CreatedUserAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "CreatedUserDomainName",
+              "identifier": "NTDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "CreatedUserSid",
+              "identifier": "Sid"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Computer",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "HostNameDomain",
+              "identifier": "NTDomain"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-07T09:21:17.1211316Z",
+      "query": "(union isfuzzy=true\n    (SecurityEvent\n    | where EventID == 4720\n    | where AccountType == \"User\"\n    | project\n        CreatedUserTime = TimeGenerated,\n        CreatedUserEventID = EventID,\n        CreatedUserActivity = Activity,\n        Computer = toupper(Computer), \n        CreatedUser = tolower(TargetAccount),\n        CreatedUserAccountName = TargetUserName,\n        CreatedUserDomainName = TargetDomainName,\n        CreatedUserSid = TargetSid, \n        AccountUsedToCreateUser = SubjectAccount,\n        CreatedByAccountName = SubjectUserName,\n        CreatedByDomainName = SubjectDomainName,\n        SidofAccountUsedToCreateUser = SubjectUserSid\n    ),\n    (WindowsEvent\n    | where EventID == 4720\n    | extend SubjectUserSid = tostring(EventData.SubjectUserSid)\n    | extend AccountType=case(EventData.SubjectUserName endswith \"$\" or SubjectUserSid in (\"S-1-5-18\", \"S-1-5-19\", \"S-1-5-20\"), \"Machine\", isempty(SubjectUserSid), \"\", \"User\")\n    | where AccountType == \"User\"\n    | extend SubjectAccount = strcat(tostring(EventData.SubjectDomainName), \"\\\\\", tostring(EventData.SubjectUserName))\n    | extend\n        SubjectDomainName = tostring(EventData.SubjectDomainName),\n        SubjectUserName = tostring(EventData.SubjectUserName)\n    | extend TargetAccount = strcat(EventData.TargetDomainName, \"\\\\\", EventData.TargetUserName)\n    | extend\n        TargetUserName = tostring(EventData.TargetUserName),\n        TargetDomainName = tostring(EventData.TargetDomainName) \n    | extend Activity=\"4720 - A user account was created.\"\n    | extend TargetSid = tostring(EventData.TargetSid)\n    | project\n        CreatedUserTime = TimeGenerated,\n        CreatedUserEventID = EventID,\n        CreatedUserActivity = Activity,\n        Computer = toupper(Computer), \n        CreatedUser = tolower(TargetAccount),\n        CreatedUserAccountName = TargetUserName,\n        CreatedUserDomainName = TargetDomainName,\n        CreatedUserSid = TargetSid, \n        AccountUsedToCreateUser = SubjectAccount,\n        CreatedByAccountName = SubjectUserName,\n        CreatedByDomainName = SubjectDomainName,\n        SidofAccountUsedToCreateUser = SubjectUserSid\n    )\n)\n| join kind=inner\n    (\n    (union isfuzzy=true\n        (SecurityEvent \n        | where AccountType == \"User\"\n        // 4732 - A member was added to a security-enabled local group\n        | where EventID == 4732\n        // TargetSid is the builin Admins group: S-1-5-32-544\n        | where TargetSid == \"S-1-5-32-544\"\n        | project\n            GroupAddTime = TimeGenerated,\n            GroupAddEventID = EventID,\n            GroupAddActivity = Activity,\n            Computer = toupper(Computer),\n            GroupName = tolower(TargetAccount), \n            GroupSid = TargetSid,\n            AccountThatAddedUser = SubjectAccount,\n            SIDofAccountThatAddedUser = SubjectUserSid,\n            AddedByAccountName = SubjectUserName,\n            AddedByDomainName = SubjectDomainName,\n            CreatedUserSid = MemberSid\n        ),\n        (WindowsEvent \n        // 4732 - A member was added to a security-enabled local group\n        | where EventID == 4732 and EventData has \"S-1-5-32-544\"\n        //TargetSid is the builin Admins group: S-1-5-32-544\n        | extend SubjectUserSid = tostring(EventData.SubjectUserSid)\n        | extend AccountType=case(EventData.SubjectUserName endswith \"$\" or SubjectUserSid in (\"S-1-5-18\", \"S-1-5-19\", \"S-1-5-20\"), \"Machine\", isempty(SubjectUserSid), \"\", \"User\")\n        | where AccountType == \"User\"\n        | extend TargetSid = tostring(EventData.TargetSid)\n        | where TargetSid == \"S-1-5-32-544\"\n        | extend SubjectAccount = strcat(tostring(EventData.SubjectDomainName), \"\\\\\", tostring(EventData.SubjectUserName))\n        | extend\n            SubjectDomainName = tostring(EventData.SubjectDomainName),\n            SubjectUserName = tostring(EventData.SubjectUserName)\n        | extend TargetAccount = strcat(EventData.TargetDomainName, \"\\\\\", EventData.TargetUserName)\n        | extend Activity=\"4732 - A member was added to a security-enabled local group.\"\n        | extend MemberSid = tostring(EventData.MemberSid)\n        | project\n            GroupAddTime = TimeGenerated,\n            GroupAddEventID = EventID,\n            GroupAddActivity = Activity,\n            Computer = toupper(Computer),\n            GroupName = tolower(TargetAccount), \n            GroupSid = TargetSid,\n            AccountThatAddedUser = SubjectAccount,\n            SIDofAccountThatAddedUser = SubjectUserSid,\n            AddedByAccountName = SubjectUserName,\n            AddedByDomainName = SubjectDomainName,\n            CreatedUserSid = MemberSid\n        )\n    )\n    )\n    on CreatedUserSid\n//Create User first, then the add to the group.\n| project\n    Computer,\n    CreatedUserTime,\n    CreatedUserEventID,\n    CreatedUserActivity,\n    CreatedUser,\n    CreatedUserSid,\n    CreatedUserAccountName,\n    CreatedUserDomainName,\n    GroupAddTime,\n    GroupAddEventID,\n    GroupAddActivity,\n    GroupName,\n    GroupSid,\n    AccountUsedToCreateUser,\n    SidofAccountUsedToCreateUser,\n    CreatedByAccountName,\n    CreatedByDomainName, \n    AccountThatAddedUser,\n    SIDofAccountThatAddedUser,\n    AddedByAccountName,\n    AddedByDomainName\n| extend\n    HostName = tostring(split(Computer, \".\")[0]),\n    DomainIndex = toint(indexof(Computer, '.'))\n| extend HostNameDomain = iff(DomainIndex != -1, substring(Computer, DomainIndex + 1), Computer)\n| project-away DomainIndex\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Low",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "PrivilegeEscalation"
+      ],
+      "techniques": [
+        "T1098"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

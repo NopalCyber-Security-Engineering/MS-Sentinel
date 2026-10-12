@@ -1,0 +1,57 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T07:19:44.3648983Z",
+    "name": "[NopalCyber] Detect MFA Fatigue/Push Bombing",
+    "native_rule_id": "a44d33f1-7324-4d1e-b6bb-26a6db7e809b",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2800eb9d-0000-0d00-0000-68eca8110000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/a44d33f1-7324-4d1e-b6bb-26a6db7e809b",
+    "kind": "Scheduled",
+    "name": "a44d33f1-7324-4d1e-b6bb-26a6db7e809b",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Detects multiple denied or failed multi-factor authentication (MFA) prompts for a single user within a short time window. This pattern is commonly associated with MFA fatigue or push bombing attacks, where an attacker attempts to trick the user into approving an MFA request by spamming prompts repeatedly.",
+      "displayName": "[NopalCyber] Detect MFA Fatigue/Push Bombing",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T07:19:44.3648983Z",
+      "query": "let minDenies = 10;\r\nSigninLogs\r\n| where ResultType in (\"500121\",\"5001210\",\"5001211\",\"5001216\") // MFA denied/expired/failed\r\n    or ResultDescription has \"MFA\" or ConditionalAccessStatus == \"failure\"\r\n| summarize Denies=count(), FirstSeen=min(TimeGenerated), LastSeen=max(TimeGenerated), IPs=make_set(IPAddress,10)\r\n          by UserPrincipalName\r\n| where Denies >= minDenies",
+      "queryFrequency": "PT10M",
+      "queryPeriod": "PT10M",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CredentialAccess"
+      ],
+      "techniques": [
+        "T1621"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

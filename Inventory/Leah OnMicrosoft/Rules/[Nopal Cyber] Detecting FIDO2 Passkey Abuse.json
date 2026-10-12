@@ -1,0 +1,75 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T11:49:56.5399501Z",
+    "name": "[Nopal Cyber] Detecting FIDO2 Passkey Abuse",
+    "native_rule_id": "3145cfbe-12aa-4e59-85ee-7cc6328b49a6",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2900ba3d-0000-0d00-0000-68ece7640000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/3145cfbe-12aa-4e59-85ee-7cc6328b49a6",
+    "kind": "Scheduled",
+    "name": "3145cfbe-12aa-4e59-85ee-7cc6328b49a6",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule will help to detect if any FIDO2 Passkey abuse in Sign in attempts",
+      "displayName": "[Nopal Cyber] Detecting FIDO2 Passkey Abuse",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountName",
+              "identifier": "Name"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountObjectId",
+              "identifier": "AadUserId"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T11:49:56.5399501Z",
+      "query": "let AbusedRoleMonitor = dynamic([\"Privileged Role Administrator\", \"Global Administrator\"]);\r\nlet FIDOAccountObjID =\r\nMicrosoftGraphActivityLogs\r\n| where RequestUri has \"/authentication/fido2Methods/creationOptions\"\r\n| where RequestMethod == \"GET\" and ResponseStatusCode == 200\r\n| parse RequestUri with \"https://graph.microsoft.com/beta/users/\" \r\nUserObjectID \"/authentication/fido2Methods/creationOptions\"\r\n| distinct UserObjectID;\r\nIdentityInfo\r\n| where AccountObjectId has_any(FIDOAccountObjID)\r\n| summarize arg_max(TimeGenerated, *) by AccountObjectId\r\n| where AssignedRoles has_any(AbusedRoleMonitor)",
+      "queryFrequency": "PT12H",
+      "queryPeriod": "PT12H",
+      "severity": "Low",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

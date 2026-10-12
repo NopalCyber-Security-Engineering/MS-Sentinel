@@ -1,0 +1,122 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-07T13:18:05.1372934Z",
+    "name": "[NopalCyber] Suspicious linking of existing user to external User",
+    "native_rule_id": "6cf94f7e-8e00-4bca-bc18-40d701f09a6c",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2e02c128-0000-0d00-0000-690df18e0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/6cf94f7e-8e00-4bca-bc18-40d701f09a6c",
+    "kind": "Scheduled",
+    "name": "6cf94f7e-8e00-4bca-bc18-40d701f09a6c",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "' This query will detect when an attempt is made to update an existing user and link it to an guest or external identity. These activities are unusual and such linking of external\nidentities should be investigated. In some cases you may see internal Entra ID sync accounts (Sync_) do this which may be benign'",
+      "displayName": "[NopalCyber] Suspicious linking of existing user to external User",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAppName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAppServicePrincipalId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingUserPrincipalName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "InitiatingAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAccountUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAadUserId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "TargetUPN_oldValue",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "TargetAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "TargetUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingIPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-07T13:18:05.1372934Z",
+      "query": "  AuditLogs\r\n  | where OperationName=~ \"Update user\" \r\n  | where Result =~ \"success\" \r\n  | mv-expand TargetResources \r\n  | mv-expand TargetResources.modifiedProperties \r\n  | extend displayName = tostring(TargetResources_modifiedProperties.displayName), \r\n  TargetUPN_oldValue = tostring(parse_json(tostring(TargetResources_modifiedProperties.oldValue))[0]), \r\n  TargetUPN_newValue = tostring(parse_json(tostring(TargetResources_modifiedProperties.newValue))[0])\r\n  | where displayName == \"UserPrincipalName\" and TargetUPN_oldValue !has \"#EXT\" and TargetUPN_newValue has \"#EXT\"\r\n  | extend InitiatingAppName = tostring(InitiatedBy.app.displayName)\r\n  | extend InitiatingAppServicePrincipalId = tostring(InitiatedBy.app.servicePrincipalId)\r\n  | extend InitiatingUserPrincipalName = tostring(InitiatedBy.user.userPrincipalName)\r\n  | extend InitiatingAadUserId = tostring(InitiatedBy.user.id)\r\n  | extend InitiatingIPAddress = tostring(InitiatedBy.user.ipAddress)\r\n  | extend InitiatedBy = tostring(iff(isnotempty(InitiatingUserPrincipalName),InitiatingUserPrincipalName, InitiatingAppName))\r\n  | summarize arg_max(TimeGenerated, *) by CorrelationId\r\n  | project-reorder TimeGenerated, InitiatedBy, InitiatingAppName, InitiatingAppServicePrincipalId, InitiatingUserPrincipalName, InitiatingAadUserId, InitiatingIPAddress, TargetUPN_oldValue, TargetUPN_newValue\r\n  | extend InitiatingAccountName = tostring(split(InitiatingUserPrincipalName, \"@\")[0]), InitiatingAccountUPNSuffix = tostring(split(InitiatingUserPrincipalName, \"@\")[1])\r\n  | extend TargetAccountName = tostring(split(TargetUPN_oldValue, \"@\")[0]), TargetUPNSuffix = tostring(split(TargetUPN_oldValue, \"@\")[1])",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "PrivilegeEscalation"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

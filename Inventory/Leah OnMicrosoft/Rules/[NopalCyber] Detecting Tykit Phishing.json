@@ -1,0 +1,57 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-27T06:39:40.3357127Z",
+    "name": "[NopalCyber] Detecting Tykit Phishing",
+    "native_rule_id": "7685cd9a-8a51-477d-a423-54e3e4efc93b",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4700c629-0000-0d00-0000-68ff13ad0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/7685cd9a-8a51-477d-a423-54e3e4efc93b",
+    "kind": "Scheduled",
+    "name": "7685cd9a-8a51-477d-a423-54e3e4efc93b",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Detected endpoints that processed an SVG file and subsequently connected to a known malicious domain.",
+      "displayName": "[NopalCyber] Detecting Tykit Phishing",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-27T06:39:40.3357127Z",
+      "query": "let Tykit=externaldata(Domain:string)\r\n[h'https://raw.githubusercontent.com/SlimKQL/Hunting-Queries-Detection-Rules/refs/heads/main/IOC/TyKit.csv']\r\nwith (format='csv', ignoreFirstRecord=true);\r\nlet svg =\r\nDeviceFileEvents\r\n| where ActionType == @\"FileCreated\"\r\n| where FileName endswith \".svg\"\r\n|project SVGTime=Timestamp,DeviceId,InitiatingProcessAccountName,DeviceName,ActionType,FileName,SHA256,InitiatingProcessFileName; \r\nlet ioc =\r\nDeviceNetworkEvents \r\n| where RemoteUrl has \"segy\" or RemoteUrl has_any (Tykit) or RemoteUrl matches regex \"^loginmicr(o|0)sft.*?\\\\.([a-z0-9]+)?[a-zA-Z0-9]+\\\\.cc$\"\r\n| project IOCTime=Timestamp,DeviceId,InitiatingProcessAccountName,DeviceName,ActionType,RemoteUrl;\r\nsvg\r\n| join kind=inner (\r\n    ioc\r\n) on DeviceId\r\n| project DeviceId,InitiatingProcessAccountName,DeviceName,RemoteUrl",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T1566"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-09-03T10:31:19.6095493Z",
+    "name": "Imminent Ransomware",
+    "native_rule_id": "70e9fe9a-e0ef-44ce-ab0c-9380ae86a343",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"d903af82-0000-0d00-0000-68b818f80000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/70e9fe9a-e0ef-44ce-ab0c-9380ae86a343",
+    "kind": "Scheduled",
+    "name": "70e9fe9a-e0ef-44ce-ab0c-9380ae86a343",
+    "properties": {
+      "alertRuleTemplateName": "bb46dd86-e642-48a4-975c-44f5ac2b5033",
+      "description": "This query checks for a series of commands that are commonly used by attackers to disable security tools and system recovery tools before deploying Macaw ransomware in an organization.",
+      "displayName": "Imminent Ransomware",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Dvc",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "DnsDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-09-03T10:31:19.6095493Z",
+      "query": "_ASim_ProcessEvent \n// Pivot on specific commands \n| where CommandLine has_any(\"-ExclusionPath\", \"Set-MpPreference\", \"advfirewall\", \"-ExclusionExtension\", \n\"-EnableControlledFolderAccess\", \"windefend\", \"onstart\", \"bcdedit\", \"Startup\") \n// Making list of found commands \n| summarize CommandLine = make_set(CommandLine, 10000) by DvcId, Dvc, bin(TimeGenerated, 6h) \n// Extending columns for later aggregration, based on TTP\n| extend StartUpExclusionPath = iff(CommandLine has_all(\"-ExclusionPath\", \"Startup\"), 1, 0) \n| extend DefenderTamp = iff(CommandLine has \"Set-MpPreference\" \nand CommandLine has_any( \n\"-SevereThreatDefaultAction 6\" \n\"-HighThreatDefaultAction 6\", \n\"-ModerateThreatDefaultAction 6\", \n\"-LowThreatDefaultAction 6\" \n\"-ScanScheduleDay 8\"), 1, 0) \n| extend NetshFirewallTampering = iff(CommandLine has_all( \"netsh\", \"advfirewall\", \"allprofiles state off\"), 1, 0) \n| extend BatExclusion = iff(CommandLine has_all(\"-ExclusionExtension\", \".bat\"), 1, 0) \n| extend ExeExclusion = iff(CommandLine has_all(\"-ExclusionExtension\", \".exe\"), 1, 0) \n| extend DisableControlledFolderAccess = iff(CommandLine has_all(\"-EnableControlledFolderAccess\", \"Disabled\"), 1, 0) \n| extend ScDeleteDefend = iff(CommandLine has_all(\"sc\", \"delete\", \"windefend\"), 1, 0) \n| extend BootTampering = iff(CommandLine has_all(\"bcdedit\", \"default\") and CommandLine has_any (\"recoveryenabled No\", \"bootstatuspolicy ignoreallfailures\"), 1, 0) \n| extend SchTasks = iff(CommandLine has_all(\"/sc\", \"onstart\", \"system\", \"/create\", \"/delay\"), 1, 0) \n// Summarizing found commands \n| summarize by NetshFirewallTampering ,BatExclusion, ExeExclusion, DisableControlledFolderAccess, ScDeleteDefend, SchTasks, BootTampering, DefenderTamp, StartUpExclusionPath, DvcId, Dvc, TimeGenerated \n// Adding up each piece of evidence \n| extend EvidenceCount = NetshFirewallTampering + BatExclusion + ExeExclusion + DisableControlledFolderAccess + ScDeleteDefend + SchTasks + BootTampering + DefenderTamp + StartUpExclusionPath \n| where EvidenceCount > 4\n| extend HostName = iff(Dvc has '.', substring(Dvc, 0, indexof(Dvc, '.')), Dvc)\n| extend DnsDomain = iff(Dvc has '.', substring(Dvc, indexof(Dvc, '.') + 1), \"\")\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "High",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "DefenseEvasion",
+        "Persistence"
+      ],
+      "techniques": [
+        "T1562",
+        "T1547"
+      ],
+      "templateVersion": "1.0.0",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

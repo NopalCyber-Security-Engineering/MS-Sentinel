@@ -1,0 +1,85 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-09-30T08:08:04.1250377Z",
+    "name": "[NopalCyber] AV detections related to Dev-0530 actors",
+    "native_rule_id": "f70f7b2f-0e80-43ad-9cd9-224be0e933c6",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4b008642-0000-0d00-0000-68db8fe40000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/f70f7b2f-0e80-43ad-9cd9-224be0e933c6",
+    "kind": "Scheduled",
+    "name": "f70f7b2f-0e80-43ad-9cd9-224be0e933c6",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "'This query looks for Microsoft Defender AV detections related to Dev-0530 actors.\nIn Microsoft Sentinel the SecurityAlerts table includes only the Device Name of the affected device, this query joins the DeviceInfo table to clearly connect other information such as Device group, ip, logged on users etc. This would allow the Microsoft Sentinel analyst to have more context related to the alert, if available.'",
+      "displayName": "[NopalCyber] AV detections related to Dev-0530 actors",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "CompromisedEntity",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "HostNameDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "PublicIP",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-09-30T08:08:04.1250377Z",
+      "query": "  let Dev0530_threats = dynamic([\"Trojan:Win32/SiennaPurple.A\", \"Ransom:Win32/SiennaBlue.A\", \"Ransom:Win32/SiennaBlue.B\"]);\r\n  SecurityAlert\r\n  | where ProviderName == \"MDATP\"\r\n  | extend ThreatName = tostring(parse_json(ExtendedProperties).ThreatName)\r\n  | extend ThreatFamilyName = tostring(parse_json(ExtendedProperties).ThreatFamilyName)\r\n  | where ThreatName in~ (Dev0530_threats) or ThreatFamilyName in~ (Dev0530_threats)\r\n  | extend CompromisedEntity = tolower(CompromisedEntity)\r\n  | join kind=inner (DeviceInfo\r\n      | extend DeviceName = tolower(DeviceName)\r\n  ) on $left.CompromisedEntity == $right.DeviceName\r\n  | summarize by bin(TimeGenerated, 1d), DisplayName, ThreatName, ThreatFamilyName, PublicIP, AlertSeverity, Description, tostring(LoggedOnUsers), DeviceId, TenantId, CompromisedEntity, tostring(LoggedOnUsers), ProductName, Entities\r\n  | extend HostName = tostring(split(CompromisedEntity, \".\")[0]), DomainIndex = toint(indexof(CompromisedEntity, '.'))\r\n  | extend HostNameDomain = iff(DomainIndex != -1, substring(CompromisedEntity, DomainIndex + 1), CompromisedEntity)\r\n  | project-away DomainIndex",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [
+        "T1486"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T08:38:11.6756755Z",
+    "name": "[NopalCyber] DISCOVERY: Obsolete device connecting to Entra",
+    "native_rule_id": "bb061b1d-dc40-4852-ba3d-408d1cb3c2c5",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900178c-0000-0d00-0000-68f5f4f50000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/bb061b1d-dc40-4852-ba3d-408d1cb3c2c5",
+    "kind": "Scheduled",
+    "name": "bb061b1d-dc40-4852-ba3d-408d1cb3c2c5",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This query will help to detect unpatched Windows 10 and 11 clients connecting to your Entra tenant via AADSTS5000611 (Symmetric Key Derivation Function version 'KDFV1' is invalid)",
+      "displayName": "[NopalCyber] DISCOVERY: Obsolete device connecting to Entra",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Identity",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T08:38:11.6756755Z",
+      "query": "union isfuzzy=true SigninLogs, AADNonInteractiveUserSignInLogs\n| where ResultType != 0 and ResultDescription == \"Other\"\n| where ResultType == \"500061\"\n| distinct Category, Identity\n",
+      "queryFrequency": "PT6H",
+      "queryPeriod": "PT6H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T1078"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

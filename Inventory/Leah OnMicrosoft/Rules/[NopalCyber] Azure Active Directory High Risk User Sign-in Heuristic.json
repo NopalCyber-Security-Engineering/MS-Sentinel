@@ -1,0 +1,77 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T11:31:36.7112442Z",
+    "name": "[NopalCyber] Azure Active Directory High Risk User Sign-in Heuristic",
+    "native_rule_id": "52db05f6-d52f-4e81-944b-f3f523865492",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2900c033-0000-0d00-0000-68ece3190000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/52db05f6-d52f-4e81-944b-f3f523865492",
+    "kind": "Scheduled",
+    "name": "52db05f6-d52f-4e81-944b-f3f523865492",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Identifies high risk Azure Active Directory (AD) sign-ins by leveraging Microsoft Identity Protection machine learning and heuristics.",
+      "displayName": "[NopalCyber] Azure Active Directory High Risk User Sign-in Heuristic",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "Name"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T11:31:36.7112442Z",
+      "query": "SigninLogs\n| where RiskState in (\"ConfirmedCompromise\", \"atRisk\")\n| where ResultSignature =~ \"Success\"\n| extend Country = parse_json(LocationDetails.countryOrRegion)\n| project UserPrincipalName, IPAddress, Country, AppDisplayName, AuthenticationRequirement",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T1078"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

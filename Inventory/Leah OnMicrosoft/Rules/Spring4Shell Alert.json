@@ -1,0 +1,55 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2022-04-08T23:57:23.1047243Z",
+    "name": "Spring4Shell Alert",
+    "native_rule_id": "19c5a56b-7624-4452-a30a-79baab68733c",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"11008eda-0000-0d00-0000-6250cbe30000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/19c5a56b-7624-4452-a30a-79baab68733c",
+    "kind": "Scheduled",
+    "name": "19c5a56b-7624-4452-a30a-79baab68733c",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "",
+      "displayName": "Spring4Shell Alert",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2022-04-08T23:57:23.1047243Z",
+      "query": "DeviceNetworkEvents\n| where Timestamp > ago(7d)\n| where ActionType =~ \"NetworkSignatureInspected\"\n| where AdditionalFields contains \".jsp?cmd=\"\n| summarize makeset(AdditionalFields, 5), min(Timestamp), max(Timestamp) by DeviceId, DeviceName\n",
+      "queryFrequency": "PT5H",
+      "queryPeriod": "PT5H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

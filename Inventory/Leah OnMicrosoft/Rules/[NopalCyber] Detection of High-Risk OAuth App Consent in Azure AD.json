@@ -1,0 +1,77 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T07:23:12.9093458Z",
+    "name": "[NopalCyber] Detection of High-Risk OAuth App Consent in Azure AD",
+    "native_rule_id": "3de21a42-fdca-4854-8d71-60453d565658",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900e968-0000-0d00-0000-68f5e3610000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/3de21a42-fdca-4854-8d71-60453d565658",
+    "kind": "Scheduled",
+    "name": "3de21a42-fdca-4854-8d71-60453d565658",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule will help to detects when a non-approved application is granted high-risk permissions via consent in Azure AD.\nThis is a common method for attackers to achieve persistence and privilege escalation in Microsoft 365 environments.",
+      "displayName": "[NopalCyber] Detection of High-Risk OAuth App Consent in Azure AD",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "Name"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IpAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T07:23:12.9093458Z",
+      "query": "let highRiskPermissions = dynamic([\r\n    \"Mail.ReadWrite\",\r\n    \"Mail.Send\",\r\n    \"MailboxSettings.ReadWrite\",\r\n    \"Calendars.ReadWrite\",\r\n    \"Contacts.ReadWrite\",\r\n    \"Files.ReadWrite.All\",\r\n    \"Directory.ReadWrite.All\",\r\n    \"User.ReadWrite.All\",\r\n    \"Group.ReadWrite.All\",\r\n    \"Application.ReadWrite.All\",\r\n    \"DelegatedPermissionGrant.ReadWrite.All\",\r\n    \"AppRoleAssignment.ReadWrite.All\",\r\n    \"Policy.ReadWrite.All\",\r\n    \"RoleManagement.ReadWrite.Directory\"\r\n]);\r\n// FP Mitigation: Add the display names of legitimate applications that require high-risk permissions to this list.\r\nlet approvedApps = dynamic([]);\r\nAuditLogs\r\n// Filter for successful application consent events in Azure AD.\r\n| where Category == \"ApplicationManagement\" and OperationName == \"Consent to application\" and Result == \"success\"\r\n// Parse the TargetResources to extract application and permission details.\r\n| extend TargetResource = TargetResources[0]\r\n| extend AppDisplayName = tostring(TargetResource.displayName)\r\n| extend ModifiedProperties = TargetResource.modifiedProperties\r\n| mv-expand ModifiedProperties\r\n| where ModifiedProperties.displayName == \"ConsentAction.Permissions\"\r\n// Extract the granted permissions string.\r\n| extend GrantedPermissions = tostring(parse_json(tostring(ModifiedProperties.newValue)))\r\n// Exclude known and approved applications to reduce false positives.\r\n| where not(AppDisplayName in (approvedApps))\r\n// Check if any of the granted permissions are in our high-risk list.\r\n| where GrantedPermissions has_any (highRiskPermissions)\r\n// Extract user details.\r\n| extend UserPrincipalName = tostring(InitiatedBy.user.userPrincipalName)\r\n| extend IpAddress = tostring(InitiatedBy.user.ipAddress)\r\n// Summarize the findings for alerting.\r\n| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated), GrantedPermissions = make_set(GrantedPermissions) by AppDisplayName, UserPrincipalName, IpAddress, OperationName\r\n| extend timestamp = StartTime",
+      "queryFrequency": "PT6H",
+      "queryPeriod": "PT6H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "ResourceDevelopment"
+      ],
+      "techniques": [
+        "T1583"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

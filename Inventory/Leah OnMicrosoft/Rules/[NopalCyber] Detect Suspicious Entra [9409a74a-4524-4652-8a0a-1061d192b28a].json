@@ -1,0 +1,63 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-09-22T07:27:05.1735663Z",
+    "name": "[NopalCyber] Detect Suspicious Entra ID Actor Token Abuse - Cross-Tenant Impersonation (CVE-2025-55241)",
+    "native_rule_id": "9409a74a-4524-4652-8a0a-1061d192b28a",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4d00738c-0000-0d00-0000-68d0fa490000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/9409a74a-4524-4652-8a0a-1061d192b28a",
+    "kind": "Scheduled",
+    "name": "9409a74a-4524-4652-8a0a-1061d192b28a",
+    "properties": {
+      "alertDetailsOverride": {
+        "alertDynamicProperties": []
+      },
+      "alertRuleTemplateName": null,
+      "description": "Detects potential abuse of Microsoft Actor tokens for cross-tenant impersonation attacks targeting Entra ID tenants. This rule identifies suspicious audit log entries that may indicate exploitation of CVE-2025-55241, a critical vulnerability in Azure AD Graph API that allowed attackers to impersonate any user across Entra ID tenants using malicious Actor tokens.",
+      "displayName": "[NopalCyber] Detect Suspicious Entra ID Actor Token Abuse - Cross-Tenant Impersonation (CVE-2025-55241)",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-09-22T07:27:05.1735663Z",
+      "query": "AuditLogs\n| where not(OperationName has \"group\")\n| where not(OperationName == \"Set directory feature on tenant\")\n| where InitiatedBy has \"user\"\n| where InitiatedBy.user.displayName has_any (\"Office 365 Exchange Online\", \"Skype for Business Online\", \"Dataverse\", \"Office 365 SharePoint Online\", \"Microsoft Dynamics ERP\")\n\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "DefenseEvasion",
+        "PrivilegeEscalation"
+      ],
+      "techniques": [
+        "T1134",
+        "T1484",
+        "T1656"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-02-04T09:15:16.4453858Z",
+    "name": "[NopalCyber] Data Connector Health Check - Azure DocumentDB (MongoDB)",
+    "native_rule_id": "dc340807-a43c-4fd6-a255-85d884323265",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"1d0098b6-0000-0d00-0000-69830e250000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/dc340807-a43c-4fd6-a255-85d884323265",
+    "kind": "Scheduled",
+    "name": "dc340807-a43c-4fd6-a255-85d884323265",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule will identify if any Azure DocumentDB (MongoDB) stopped reporting to Sentinel in last 3 days.",
+      "displayName": "[NopalCyber] Data Connector Health Check - Azure DocumentDB (MongoDB)",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Dataconnector",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Resource",
+              "identifier": "HostName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-02-04T09:15:16.4453858Z",
+      "query": "AzureDiagnostics\r\n| where TimeGenerated > ago(7d)\r\n| where ResourceProvider ==  \"MICROSOFT.DOCUMENTDB\"\r\n| extend Dataconnector = \"Azure DocumentDB(MongoDB)\"\r\n| summarize LastCall = max(TimeGenerated) by Dataconnector, ResourceType, Resource\r\n| extend LogIngestionStatus = iff(LastCall < ago(3d), 'No', 'Yes')\r\n| where LogIngestionStatus == \"No\"",
+      "queryFrequency": "P3D",
+      "queryPeriod": "P7D",
+      "severity": "Low",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

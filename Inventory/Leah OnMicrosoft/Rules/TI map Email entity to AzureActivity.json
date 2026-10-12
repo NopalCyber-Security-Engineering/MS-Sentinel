@@ -1,0 +1,95 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T07:50:33.5284295Z",
+    "name": "TI map Email entity to AzureActivity",
+    "native_rule_id": "3d3c46a0-a9f9-451f-8f2c-50c7bd9a7a2f",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"280092ad-0000-0d00-0000-68ecaf4a0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/3d3c46a0-a9f9-451f-8f2c-50c7bd9a7a2f",
+    "kind": "Scheduled",
+    "name": "3d3c46a0-a9f9-451f-8f2c-50c7bd9a7a2f",
+    "properties": {
+      "alertRuleTemplateName": "a9a4d1ee-0f52-4a1f-8def-a2fb4462104c",
+      "description": "Identifies a match in AzureActivity table from any Email IOC from TI",
+      "displayName": "TI map Email entity to AzureActivity",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Caller",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "Name",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "UPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "CallerIpAddress",
+              "identifier": "Address"
+            }
+          ]
+        },
+        {
+          "entityType": "URL",
+          "fieldMappings": [
+            {
+              "columnName": "Url",
+              "identifier": "Url"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T07:50:33.5284295Z",
+      "query": "let dt_lookBack = 1h;\nlet ioc_lookBack = 14d;\nlet emailregex = @'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$';\nThreatIntelIndicators\n//Filtering the table for Email related IOCs\n| extend IndicatorType = replace(@\"\\[|\\]|\\\"\"\", \"\", tostring(split(ObservableKey, \":\", 0)))\n| where IndicatorType == \"email-addr\"\n| extend EmailSenderAddress = ObservableValue\n| extend EmailSourceDomain = substring(EmailSenderAddress, indexof(EmailSenderAddress, \"@\") + 1, strlen(EmailSenderAddress) - indexof(EmailSenderAddress, \"@\") - 1)\n| extend Url = iff(ObservableKey == \"url:value\", ObservableValue, \"\")\n| extend TrafficLightProtocolLevel = tostring(parse_json(AdditionalFields).TLPLevel)\n| where TimeGenerated >= ago(ioc_lookBack)\n| summarize LatestIndicatorTime = arg_max(TimeGenerated, *) by Id, ObservableValue\n| where IsActive and (ValidUntil > now() or isempty(ValidUntil))\n| project-reorder *, IsActive, TrafficLightProtocolLevel, EmailSenderAddress, EmailSourceDomain, Type\n// using innerunique to keep perf fast and result set low, we only need one match to indicate potential malicious activity that needs to be investigated\n| join kind=innerunique (\n    AzureActivity | where TimeGenerated >= ago(dt_lookBack) and isnotempty(Caller)\n    | extend Caller = tolower(Caller)\n    | where Caller matches regex emailregex\n    | extend AzureActivity_TimeGenerated = TimeGenerated\n)\non $left.EmailSenderAddress == $right.Caller\n| where AzureActivity_TimeGenerated < ValidUntil\n| summarize AzureActivity_TimeGenerated = arg_max(AzureActivity_TimeGenerated, *) by Id, Caller\n| extend Description = tostring(parse_json(Data).description)\n| extend ActivityGroupNames = extract(@\"ActivityGroup:(\\S+)\", 1, tostring(parse_json(Data).labels))\n| project AzureActivity_TimeGenerated, Description, ActivityGroupNames, Id, ValidUntil, Confidence, EmailSenderAddress, EmailSourceDomain, Caller, CallerIpAddress, Url\n| extend Name = tostring(split(Caller, '@', 0)[0]), UPNSuffix = tostring(split(Caller, '@', 1)[0])\n| extend timestamp = AzureActivity_TimeGenerated\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P14D",
+      "severity": "Medium",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T1566"
+      ],
+      "templateVersion": "1.2.11",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

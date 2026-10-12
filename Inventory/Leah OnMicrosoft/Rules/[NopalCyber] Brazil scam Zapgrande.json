@@ -1,0 +1,60 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-27T06:30:04.5920717Z",
+    "name": "[NopalCyber] Brazil scam Zapgrande",
+    "native_rule_id": "9334715c-8209-4830-9f0c-900c0fbd7921",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4600d998-0000-0d00-0000-68ff116e0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/9334715c-8209-4830-9f0c-900c0fbd7921",
+    "kind": "Scheduled",
+    "name": "9334715c-8209-4830-9f0c-900c0fbd7921",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Detect the patten execution of the the brazilian malware Zapgrande",
+      "displayName": "[NopalCyber] Brazil scam Zapgrande",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-27T06:30:04.5920717Z",
+      "query": "let zip=\r\nDeviceFileEvents\r\n| where ActionType == \"FileCreated\"\r\n| where FileName endswith \".zip\"\r\n| project DeviceId,ZipTimestamp =Timestamp,ZipFolderPath=FolderPath,ZipFileName=FileName;\r\nlet lnk =\r\nDeviceFileEvents\r\n| where ActionType == \"FileCreated\"\r\n| where FileName endswith \".lnk\"\r\n| project DeviceId, LnkTimestamp = Timestamp, LnkFolderPath = FolderPath, LnkFileName = FileName;\r\nlet pwsh =\r\nDeviceProcessEvents\r\n| where InitiatingProcessFileName == \"cmd.exe\"\r\n| where FileName in (\"powershell.exe\", \"POWERSHELL.EXE\", \"powershell_ise.exe\", \"POWERSHELL_ISE.EXE\")\r\n| where ProcessCommandLine has_any (\"Net.WebClient\",\"DownloadFile\",\"Invoke-WebRequest\",\"iwr\",\"Invoke-Shellcode\",\"http:\",\r\n\"New-Object System.Net.Sockets.TcpClient\",\"IEX\",\"Invoke-Expression\",\"DownloadString\") or ProcessCommandLine contains \"base64\" \r\nor ProcessCommandLine contains \"-EcondedCommand\" or ProcessCommandLine contains \"-enc\"\r\n| project DeviceId, PWSHTimestamp = Timestamp, DeviceName, AccountName, CommandLine_PS = ProcessCommandLine;\r\nzip\r\n| join kind=inner (lnk) on DeviceId\r\n| join kind=inner (pwsh) on DeviceId\r\n| where LnkTimestamp >= ZipTimestamp\r\n| where ZipTimestamp >= PWSHTimestamp\r\n| where PWSHTimestamp between (ZipTimestamp .. 15m)\r\n| project Timestamp_Zip = ZipTimestamp,Timestamp_LNK = LnkTimestamp,Timestamp_PS = PWSHTimestamp,DeviceName,AccountName,ZipFolderPath,\r\nLnkFileName,CommandLine_PS",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "Execution"
+      ],
+      "techniques": [
+        "T1566",
+        "T1204",
+        "T1059"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-09-30T04:40:15.5084739Z",
+    "name": "[NopalCyber] Azure CLI Spray - ASN 53667",
+    "native_rule_id": "66d77fa8-3305-464a-8b0b-326884cc91e4",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2e013e9b-0000-0d00-0000-68db5f300000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/66d77fa8-3305-464a-8b0b-326884cc91e4",
+    "kind": "Scheduled",
+    "name": "66d77fa8-3305-464a-8b0b-326884cc91e4",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule detects potential password spray attacks using the Microsoft Azure CLI client.\n\nThe detection focuses on:\n\nFailed login attempts with result codes:\n\n50126 → Invalid username or password\n\n50053 → Account locked due to repeated failures\n\nUserAgent = \"node-fetch\" → Indicates automated login attempts from scripted tools or CLI.\n\nASN = 53667 → This ASN is commonly associated with cloud-hosting services (e.g., Amazon / malicious infra).\n\nAppDisplayName = Microsoft Azure CLI → Ensures filtering only Azure CLI sign-ins.",
+      "displayName": "[NopalCyber] Azure CLI Spray - ASN 53667",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-09-30T04:40:15.5084739Z",
+      "query": "SigninLogs\r\n| where TimeGenerated > ago(30d)\r\n| where ResultType == \"50126\" or ResultType == \"50053\"\r\n| where UserAgent == \"node-fetch\"\r\n| where AutonomousSystemNumber == \"53667\"\r\n| where AppDisplayName == \"Microsoft Azure CLI\"",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "CommandAndControl",
+        "ResourceDevelopment"
+      ],
+      "techniques": [
+        "T1078",
+        "T1071",
+        "T1586"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

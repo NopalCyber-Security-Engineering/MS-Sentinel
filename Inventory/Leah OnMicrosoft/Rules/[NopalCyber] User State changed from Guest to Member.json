@@ -1,0 +1,122 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T07:18:42.4862891Z",
+    "name": "[NopalCyber] User State changed from Guest to Member",
+    "native_rule_id": "c7c6c6f3-b3a4-420e-9a5d-b70f77475ae0",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"28004f9d-0000-0d00-0000-68eca7d30000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/c7c6c6f3-b3a4-420e-9a5d-b70f77475ae0",
+    "kind": "Scheduled",
+    "name": "c7c6c6f3-b3a4-420e-9a5d-b70f77475ae0",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "'Detects when a guest account in a tenant is converted to a member of the tenant.\nMonitoring guest accounts and the access they are provided is important to detect potential account abuse.\nAccounts converted to members should be investigated to ensure the activity was legitimate.",
+      "displayName": "[NopalCyber] User State changed from Guest to Member",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UpdatingAppName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "UpdatingServicePrincipalId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UpdatingUserPrincipalName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "InitiatingAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAccountUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UpdatingUserAadUserId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UpdatedUserPrincipalName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "TargetAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "TargetAccountUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "UpdatingUserIPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T07:18:42.4862891Z",
+      "query": "  AuditLogs\r\n    | where OperationName =~ \"Update user\"\r\n    | where Result =~ \"success\"\r\n    | mv-expand TargetResources\r\n    | mv-expand TargetResources.modifiedProperties\r\n    | where TargetResources_modifiedProperties.displayName =~ \"TargetId.UserType\"\r\n    | extend UpdatingAppName = tostring(parse_json(tostring(InitiatedBy.app)).displayName)\r\n    | extend UpdatingServicePrincipalId = tostring(parse_json(tostring(InitiatedBy.app)).servicePrincipalId)\r\n    | extend UpdatingUserPrincipalName = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)\r\n    | extend UpdatingUserAadUserId = tostring(parse_json(tostring(InitiatedBy.user)).id)\r\n    | extend UpdatingUserIPAddress = tostring(parse_json(tostring(InitiatedBy.user)).ipAddress)\r\n    | extend UpdatingUser = iif(isnotempty(UpdatingServicePrincipalId), UpdatingServicePrincipalId, UpdatingUserPrincipalName)\r\n    | extend UpdatedUserPrincipalName = tostring(TargetResources.userPrincipalName)\r\n    | project-reorder TimeGenerated, UpdatedUserPrincipalName, UpdatingUser\r\n    | where parse_json(tostring(TargetResources_modifiedProperties.newValue)) =~ \"\\\"Member\\\"\" and parse_json(tostring(TargetResources_modifiedProperties.oldValue)) =~ \"\\\"Guest\\\"\"\r\n    | extend InitiatingAccountName = tostring(split(UpdatingUserPrincipalName, \"@\")[0]), InitiatingAccountUPNSuffix = tostring(split(UpdatingUserPrincipalName, \"@\")[1])\r\n    | extend TargetAccountName = tostring(split(UpdatedUserPrincipalName, \"@\")[0]), TargetAccountUPNSuffix = tostring(split(UpdatedUserPrincipalName, \"@\")[1])",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

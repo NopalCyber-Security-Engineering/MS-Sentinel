@@ -1,0 +1,61 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T08:35:14.8599507Z",
+    "name": "[NopalCyber] Detecting High Risk Passkey Users",
+    "native_rule_id": "b0cfc935-8240-45a1-9d06-35b7f4dde880",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900668a-0000-0d00-0000-68f5f4430000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/b0cfc935-8240-45a1-9d06-35b7f4dde880",
+    "kind": "Scheduled",
+    "name": "b0cfc935-8240-45a1-9d06-35b7f4dde880",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "",
+      "displayName": "[NopalCyber] Detecting High Risk Passkey Users",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T08:35:14.8599507Z",
+      "query": "SigninLogs\r\n| where RiskEventTypes_V2 != \"[]\"\r\n| where RiskLevelAggregated == \"high\"\r\n| where RiskLevelDuringSignIn == \"high\"\r\n| where RiskState == \"atRisk\"\r\n| where AuthenticationDetails contains \"FIDO2 security key\"",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "Persistence",
+        "CommandAndControl"
+      ],
+      "techniques": [
+        "T1078",
+        "T1556",
+        "T1071"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

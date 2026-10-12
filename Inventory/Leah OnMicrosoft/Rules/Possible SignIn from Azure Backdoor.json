@@ -1,0 +1,91 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-07-10T11:15:33.9311114Z",
+    "name": "Possible SignIn from Azure Backdoor",
+    "native_rule_id": "d961b45e-ddbe-451e-9591-44ea68fb0189",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"370046ee-0000-0d00-0000-686fa0d70000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/d961b45e-ddbe-451e-9591-44ea68fb0189",
+    "kind": "Scheduled",
+    "name": "d961b45e-ddbe-451e-9591-44ea68fb0189",
+    "properties": {
+      "alertRuleTemplateName": "fa00014c-c5f4-4715-8f5b-ba567e19e41e",
+      "customDetails": {
+        "AppDisplayName": "AppDisplayName",
+        "DomainAdded": "DomainName",
+        "DomainAddedTime": "DomainAddedTime",
+        "InitiatedBy": "InitiatedBy",
+        "ModifiedProperties": "ModifiedProperties",
+        "ResourceDisplayName": "ResourceDisplayName",
+        "SignInTime": "SignInTime"
+      },
+      "description": "Identifies when a user adds an unverified domain as an authentication method, followed by a sign-in from a user the newly added domain. Threat actors may add custom domains to create a backdoor to your tenant. It's important to monitor whenever custom domains are added to the tenant.",
+      "displayName": "Possible SignIn from Azure Backdoor",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserDomain",
+              "identifier": "NTDomain"
+            },
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-07-10T11:15:33.9311114Z",
+      "query": "// Microsoft Entra ID  Backdoors: Identity Federation\n//Ref: https://www.inversecos.com/2021/11/how-to-detect-azure-active-directory.html\nAuditLogs\n| where OperationName == \"Add unverified domain\"\n| where Result == \"success\"\n| extend InitiatedBy = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)\n| extend DomainName = tostring(TargetResources[0].displayName)\n| summarize DomainAddedTime = min(TimeGenerated), ModifiedProperties = make_set(parse_json(TargetResources[0].modifiedProperties),1048576) by InitiatedBy, DomainName\n| join kind=inner (\nSigninLogs\n| where ResultType == \"0\"\n| extend UserDomain = tostring(parse_json(split(UserPrincipalName,\"@\",1)[0]))\n| summarize SignInTime = min(TimeGenerated)  by UserPrincipalName, IPAddress, tostring(LocationDetails),AppDisplayName,ResourceDisplayName,UserDomain\n) on $left.DomainName == $right.UserDomain\n// Getting UserName and Domain\n| extend Name = split(UserPrincipalName,\"@\",0), Domain = split(UserPrincipalName,\"@\",1)\n| mv-expand Name,Domain\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "Medium",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence"
+      ],
+      "techniques": [
+        "T1098"
+      ],
+      "templateVersion": "1.0.0",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

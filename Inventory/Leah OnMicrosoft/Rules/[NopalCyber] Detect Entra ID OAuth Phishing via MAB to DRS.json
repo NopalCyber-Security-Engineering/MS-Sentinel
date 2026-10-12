@@ -1,0 +1,80 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T11:46:47.108233Z",
+    "name": "[NopalCyber] Detect Entra ID OAuth Phishing via MAB to DRS",
+    "native_rule_id": "457753f1-504a-4d66-8ed8-0d6eb338333f",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"29000c3c-0000-0d00-0000-68ece6a80000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/457753f1-504a-4d66-8ed8-0d6eb338333f",
+    "kind": "Scheduled",
+    "name": "457753f1-504a-4d66-8ed8-0d6eb338333f",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Detects a user initiating an OAuth flow with the Microsoft Authentication Broker (MAB) client to the Device Registration Service (DRS) from multiple IP addresses within a short time window. This pattern is indicative of an adversary using a phished authorization code to begin the process of registering a malicious device in the target tenant, a key step for establishing persistence. The rule specifically looks for sessions that involve at least one browser-based request, which is common in the initial phishing stage.",
+      "displayName": "[NopalCyber] Detect Entra ID OAuth Phishing via MAB to DRS",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPAddress",
+              "identifier": "Address"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "FullName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T11:46:47.108233Z",
+      "query": "SigninLogs\n| where TimeGenerated > ago(1d)\n// Filter for successful sign-ins targeting the Device Registration Service with the Microsoft Authentication Broker client.\n| where ResultType == 0\n| where AppId == \"29d9ed98-a469-4536-ade2-f981bc1d605e\" // Microsoft Authentication Broker (MAB)\n| where ResourceIdentity == \"01cb2876-7ebd-4aa4-9cc9-d28bd4d359a9\" // Device Registration Service (DRS)\n// The authentication was performed using a refresh token.\n| where IncomingTokenType == \"refreshToken\"\n// The token was specifically scoped for Azure DRS access.\n| where AuthenticationProcessingDetails has \"adrs_access\"\n| project-reorder\n    TimeGenerated,\n    UserPrincipalName,\n    AppDisplayName,\n    IPAddress,\n    Location,\n    ResourceDisplayName,\n    AuthenticationProcessingDetails,\n    DeviceDetail,\n    UserAgent,\n    CorrelationId\n  \n",
+      "queryFrequency": "PT30M",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "LateralMovement",
+        "Persistence",
+        "DefenseEvasion"
+      ],
+      "techniques": [
+        "T1550",
+        "T1098"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

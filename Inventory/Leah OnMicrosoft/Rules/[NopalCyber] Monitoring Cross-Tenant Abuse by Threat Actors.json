@@ -1,0 +1,55 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-07T13:28:34.0220231Z",
+    "name": "[NopalCyber] Monitoring Cross-Tenant Abuse by Threat Actors",
+    "native_rule_id": "3839929c-f05e-47b8-8f9f-03171e836c9c",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2e028c97-0000-0d00-0000-690df4040000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/3839929c-f05e-47b8-8f9f-03171e836c9c",
+    "kind": "Scheduled",
+    "name": "3839929c-f05e-47b8-8f9f-03171e836c9c",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule detects suspicious or unauthorized changes to Cross-Tenant Access Settings in Entra ID (Azure AD) within the last 1 hour.\n\nCross-Tenant Access Settings control how external organizations can collaborate (B2B/B2B direct connect). If an attacker modifies these settings, they could:\n\nAdd a malicious partner tenant for persistence.\n\nWeaken default cross-tenant restrictions.\n\nUpdate existing partner access to expand privileges or bypass controls.\n\nBy monitoring these critical events in AuditLogs, the rule helps SOC teams detect and respond to tenant abuse attempts by threat actors.",
+      "displayName": "[NopalCyber] Monitoring Cross-Tenant Abuse by Threat Actors",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-07T13:28:34.0220231Z",
+      "query": "AuditLogs\r\n| where TimeGenerated > ago(1h)\r\n| where Category == \"CrossTenantAccessSettings\"\r\n| where OperationName == \"Update the company default cross-tenant access setting\" or \r\nOperationName == \"Add a partner to cross-tenant access setting\" or\r\nOperationName == \"Update a partner cross-tenant access setting\"\r\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-12-09T06:08:08.4071816Z",
+    "name": "[NopalCyber] Possible CVE‑2025‑55182 Exploitation – Suspicious Network Activity",
+    "native_rule_id": "d561da55-7dd7-432b-a03a-8a263d63e7ef",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"16007d7b-0000-0d00-0000-6937bcc90000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/d561da55-7dd7-432b-a03a-8a263d63e7ef",
+    "kind": "Scheduled",
+    "name": "d561da55-7dd7-432b-a03a-8a263d63e7ef",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Detects network process activity that may indicate exploitation attempts of CVE‑2025‑55182 (React Server Components insecure deserialization",
+      "displayName": "[NopalCyber] Possible CVE‑2025‑55182 Exploitation – Suspicious Network Activity",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "DeviceName",
+              "identifier": "HostName"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "RemoteIP",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-12-09T06:08:08.4071816Z",
+      "query": "let PrototypePollutionPatterns = dynamic([\"constructor%3a\", \"__proto__%3a\", \"prototype%3a\", \"_response%3a\", \"constructor:\", \"__proto__:\", \"prototype:\", \"_response:\"]);\nlet SuspiciousGadgets = dynamic([\"vm%23\", \"child_process%23\", \"util%23\", \"fs%23\", \"vm#\", \"child_process#\", \"util#\", \"fs#\"]);\nlet RSCPorts = dynamic([3000, 3001, 8080, 8443, 443, 80]);  // Common Next.js/React ports\nDeviceNetworkEvents\n| where TimeGenerated > ago(24h)\n| where RemotePort in (RSCPorts) or LocalPort in (RSCPorts)\n| where isnotempty(RemoteUrl) or isnotempty(AdditionalFields)\n// Check URL for patterns\n| extend UrlDecoded = url_decode(RemoteUrl)\n| extend UrlLower = tolower(UrlDecoded)\n| where UrlLower has_any (PrototypePollutionPatterns) \n    or UrlLower has_any (SuspiciousGadgets)\n// Parse additional fields for headers\n| extend ThreatIndicator = case(\n                               UrlLower contains \"constructor:\" or UrlLower contains \"__proto__:\",\n                               \"Prototype Pollution\",\n                               UrlLower contains \"vm#\" or UrlLower contains \"child_process#\",\n                               \"RCE Attempt via Gadget\",\n                               UrlLower contains \"fs#\" or UrlLower contains \"util#\",\n                               \"File/Utility Gadget Abuse\",\n                               \"RSC Deserialization Exploit\"\n                           )\n| project\n    TimeGenerated,\n    DeviceName,\n    ThreatIndicator,\n    RemoteIP,\n    RemotePort,\n    RemoteUrl,\n    UrlDecoded,\n    LocalIP,\n    LocalPort,\n    InitiatingProcessAccountName,\n    InitiatingProcessFileName,\n    InitiatingProcessCommandLine\n| sort by TimeGenerated desc\n\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "High",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Discovery"
+      ],
+      "techniques": [
+        "T0840"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

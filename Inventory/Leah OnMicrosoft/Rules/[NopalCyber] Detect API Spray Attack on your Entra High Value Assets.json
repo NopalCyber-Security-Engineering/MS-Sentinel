@@ -1,0 +1,57 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-09-30T04:45:03.3422001Z",
+    "name": "[NopalCyber] Detect API Spray Attack on your Entra High Value Assets",
+    "native_rule_id": "4071413f-e09b-4abc-bb19-114e70bf49dc",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2e01d8bc-0000-0d00-0000-68db60500000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/4071413f-e09b-4abc-bb19-114e70bf49dc",
+    "kind": "Scheduled",
+    "name": "4071413f-e09b-4abc-bb19-114e70bf49dc",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule detects API spray attack attempts targeting high-value Entra accounts.\n\nAPI spray attacks often use automated services such as Amazon API Gateway to attempt multiple login requests at scale. By correlating suspicious UserAgents with BehaviorAnalytics, this detection identifies cases where the attacker’s IP overlaps with sign-ins against high-blast-radius accounts (users whose compromise would have a severe impact, such as Global Admins or critical service accounts).",
+      "displayName": "[NopalCyber] Detect API Spray Attack on your Entra High Value Assets",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-09-30T04:45:03.3422001Z",
+      "query": "let APISpray =\r\nSigninLogs\r\n| where TimeGenerated > ago(90d)\r\n| where ResultType == \"50126\" or ResultType == \"50053\"\r\n| where UserAgent has \"AmazonAPIGateway_\"\r\n| distinct IPAddress;\r\nBehaviorAnalytics\r\n| where SourceIPAddress has_any (APISpray)\r\n| extend BlastRadius = UsersInsights.BlastRadius\r\n| where BlastRadius == \"High\"",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T1078"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

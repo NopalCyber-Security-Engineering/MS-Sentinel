@@ -1,0 +1,68 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T06:30:56.8796272Z",
+    "name": "[NopalCyber] Detect Azure Outdated Security Protocols",
+    "native_rule_id": "9cc3d95d-c76f-44e9-b0b4-c5c3635bb0f1",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900ba54-0000-0d00-0000-68f5d7220000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/9cc3d95d-c76f-44e9-b0b4-c5c3635bb0f1",
+    "kind": "Scheduled",
+    "name": "9cc3d95d-c76f-44e9-b0b4-c5c3635bb0f1",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "To identify if any Azure cloud native services are still running the outdated security protocols",
+      "displayName": "[NopalCyber] Detect Azure Outdated Security Protocols",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "AzureResource",
+          "fieldMappings": [
+            {
+              "columnName": "_ResourceId",
+              "identifier": "ResourceId"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T06:30:56.8796272Z",
+      "query": "let TLSVersion = \"1.0\"; \r\nsearch\r\n    in (\r\n    ApiManagementGatewayLogs,\r\n    AzureDiagnostics,\r\n    SQLSecurityAuditEvents,\r\n    StorageBlobLogs,\r\n    StorageFileLogs,\r\n    StorageQueueLogs,\r\n    StorageTableLogs)\r\n    TimeGenerated between (ago(7d) .. now())\r\n    and (\r\n    ClientTlsVersion has TLSVersion\r\n    or tlsVersion_s has TLSVersion\r\n    or client_tls_version_name_s has TLSVersion\r\n    or TlsVersion has TLSVersion\r\n    )\r\n",
+      "queryFrequency": "P7D",
+      "queryPeriod": "P7D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "DefenseEvasion"
+      ],
+      "techniques": [
+        "T1600"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

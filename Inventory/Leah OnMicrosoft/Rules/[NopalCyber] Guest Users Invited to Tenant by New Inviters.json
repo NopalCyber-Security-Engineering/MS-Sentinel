@@ -1,0 +1,125 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T07:18:19.3407496Z",
+    "name": "[NopalCyber] Guest Users Invited to Tenant by New Inviters",
+    "native_rule_id": "b1cf3af5-1633-4c72-8037-ec2ddddbf153",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"28000e9d-0000-0d00-0000-68eca7bb0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/b1cf3af5-1633-4c72-8037-ec2ddddbf153",
+    "kind": "Scheduled",
+    "name": "b1cf3af5-1633-4c72-8037-ec2ddddbf153",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "customDetails": {},
+      "description": "'Detects when a Guest User is added by a user account that has not been seen adding a guest in the previous 14 days.\nMonitoring guest accounts and the access they are provided is important to detect potential account abuse.\nAccounts added should be investigated to ensure the activity was legitimate.",
+      "displayName": "[NopalCyber] Guest Users Invited to Tenant by New Inviters",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingUserPrincipalName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "InitiatingAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAccountUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "TargetUserPrincipalName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "TargetAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "TargetAccountUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAadUserId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "TargetAadUserId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingIPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T07:18:19.3407496Z",
+      "query": "  let inviting_users = (AuditLogs\r\n    | where TimeGenerated between(ago(14d)..ago(1d))\r\n    | where OperationName =~ \"Invite external user\"\r\n    | where Result =~ \"success\"\r\n    | extend InitiatingUserPrincipalName = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)\r\n    | where isnotempty(InitiatingUserPrincipalName)\r\n    | summarize by InitiatingUserPrincipalName);\r\n    AuditLogs\r\n    | where TimeGenerated > ago(1d)\r\n    | where OperationName =~ \"Invite external user\"\r\n    | where Result =~ \"success\"\r\n    | extend InitiatingUserPrincipalName = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)\r\n    | extend InitiatingAadUserId = tostring(InitiatedBy.user.id)\r\n    | extend InitiatingIPAddress = tostring(InitiatedBy.user.ipAddress)\r\n    | where isnotempty(InitiatingUserPrincipalName) and InitiatingUserPrincipalName !in (inviting_users)\r\n    | extend TargetUserPrincipalName = tostring(TargetResources[0].userPrincipalName)\r\n    | extend TargetAadUserId = tostring(TargetResources[0].id)\r\n    | extend invitingUser = InitiatingUserPrincipalName, invitedUserPrincipalName = TargetUserPrincipalName\r\n    | extend InitiatingAccountName = tostring(split(InitiatingUserPrincipalName, \"@\")[0]), InitiatingAccountUPNSuffix = tostring(split(InitiatingUserPrincipalName, \"@\")[1])\r\n    | extend TargetAccountName = tostring(split(TargetUserPrincipalName, \"@\")[0]), TargetAccountUPNSuffix = tostring(split(TargetUserPrincipalName, \"@\")[1])\r\n    | project-reorder TimeGenerated, OperationName, Result, TargetUserPrincipalName, TargetAadUserId, InitiatingUserPrincipalName, InitiatingAadUserId, InitiatingIPAddress",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P14D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence",
+        "InitialAccess",
+        "DefenseEvasion",
+        "PrivilegeEscalation"
+      ],
+      "techniques": [
+        "T1078",
+        "T1136"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

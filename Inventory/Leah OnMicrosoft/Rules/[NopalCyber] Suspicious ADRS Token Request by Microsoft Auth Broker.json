@@ -1,0 +1,77 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T11:47:13.0992721Z",
+    "name": "[NopalCyber] Suspicious ADRS Token Request by Microsoft Auth Broker",
+    "native_rule_id": "4fbc5c37-8132-43f6-9f23-faa3ca690c10",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"29004b3c-0000-0d00-0000-68ece6c10000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/4fbc5c37-8132-43f6-9f23-faa3ca690c10",
+    "kind": "Scheduled",
+    "name": "4fbc5c37-8132-43f6-9f23-faa3ca690c10",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule will identifies Entra ID sign-in events where a user authenticates using a refresh token issued to the Microsoft Authentication Broker (MAB) client, targeting the Device Registration Service (DRS) with the \"adrs_access\" OAuth scope. This pattern is a strong indicator of an adversary using a stolen refresh token to initiate a malicious device registration flow, often with tools like ROADtx, as a step towards establishing persistence",
+      "displayName": "[NopalCyber] Suspicious ADRS Token Request by Microsoft Auth Broker",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "Name"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T11:47:13.0992721Z",
+      "query": "SigninLogs\r\n| where TimeGenerated > ago(1d)\r\n// Filter for successful sign-ins from member accounts (users).\r\n| where ResultType == 0\r\n| where UserType == \"Member\"\r\n// The client application is the Microsoft Authentication Broker (MAB).\r\n| where AppId == \"29d9ed98-a469-4536-ade2-f981bc1d605e\"\r\n// The target resource is the Device Registration Service (DRS).\r\n| where ResourceIdentity == \"01cb2876-7ebd-4aa4-9cc9-d28bd4d359a9\"\r\n// The authentication was performed using a refresh token.\r\n| where IncomingTokenType == \"refreshToken\"\r\n// The token was specifically scoped for Azure DRS access.\r\n| where AuthenticationProcessingDetails has \"adrs_access\"\r\n| project-reorder\r\n    TimeGenerated,\r\n    UserPrincipalName,\r\n    AppDisplayName,\r\n    IPAddress,\r\n    Location,\r\n    ResourceDisplayName,\r\n    AuthenticationProcessingDetails,\r\n    DeviceDetail,\r\n    UserAgent,\r\n    CorrelationId\r\n",
+      "queryFrequency": "PT3H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence"
+      ],
+      "techniques": [
+        "T1556"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

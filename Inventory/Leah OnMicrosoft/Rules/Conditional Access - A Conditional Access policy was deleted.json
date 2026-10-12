@@ -1,0 +1,73 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T07:56:19.546133Z",
+    "name": "Conditional Access - A Conditional Access policy was deleted",
+    "native_rule_id": "716fcb3f-3a7f-4c5d-9652-19a0954ae8f6",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2800a1b0-0000-0d00-0000-68ecb0a30000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/716fcb3f-3a7f-4c5d-9652-19a0954ae8f6",
+    "kind": "Scheduled",
+    "name": "716fcb3f-3a7f-4c5d-9652-19a0954ae8f6",
+    "properties": {
+      "alertRuleTemplateName": "2e96fa64-ac4d-4c92-b79e-e9c54b5d8230",
+      "description": "A Conditional Access policy was deleted from Entra ID.",
+      "displayName": "Conditional Access - A Conditional Access policy was deleted",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "accountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "upnSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "AlertPerResult"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT1H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T07:56:19.546133Z",
+      "query": "// A Conditional Access policy was deleted.\nAuditLogs\n| where OperationName in (\"Delete conditional access policy\")\n| extend modifiedBy = tostring(InitiatedBy.user.userPrincipalName)\n| extend accountName = tostring(split(modifiedBy, \"@\")[0])\n| extend upnSuffix = tostring(split(modifiedBy, \"@\")[1])\n| project\n    TimeGenerated,\n    OperationName,\n    policy = TargetResources[0].displayName,\n    modifiedBy,\n    accountName,\n    upnSuffix,\n    result = Result,\n    oldPolicy = TargetResources[0].modifiedProperties[0].oldValue\n| order by TimeGenerated desc\n",
+      "queryFrequency": "PT5M",
+      "queryPeriod": "PT5M",
+      "severity": "Low",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "DefenseEvasion"
+      ],
+      "techniques": [
+        "T1562"
+      ],
+      "templateVersion": "1.0.1",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

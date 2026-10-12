@@ -1,0 +1,86 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T09:03:55.4680968Z",
+    "name": "[NopalCyber] OAuth Application Required Resource Access Update",
+    "native_rule_id": "0bee4ff9-a780-4041-b564-77fdc74fc972",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900d199-0000-0d00-0000-68f5fafc0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/0bee4ff9-a780-4041-b564-77fdc74fc972",
+    "kind": "Scheduled",
+    "name": "0bee4ff9-a780-4041-b564-77fdc74fc972",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This query identifies updates to the RequiredResourceAccess property of an OAuth application.\nThis property specifies resources that an application requires access to and the set of OAuth permission scopes and application roles that it needs under each of those resources.\nThis pre-configuration of required resource access drives the consent experience. The resourceAccess property of the requiredResourceAccess type is a collection of ResourceAccess.\nA threat actor might update this property before granting permissions to an application",
+      "displayName": "[NopalCyber] OAuth Application Required Resource Access Update",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountCustomEntity",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPCustomEntity",
+              "identifier": "Address"
+            }
+          ]
+        },
+        {
+          "entityType": "CloudApplication",
+          "fieldMappings": [
+            {
+              "columnName": "ModifiedApplication",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T09:03:55.4680968Z",
+      "query": "  AuditLogs\r\n  | where Category =~ \"ApplicationManagement\"\r\n  | where ActivityDisplayName has_any (\"Update application\")\r\n  | where Result =~ \"success\"\r\n  | where tostring(InitiatedBy.user.userPrincipalName) has \"@\" or tostring(InitiatedBy.app.displayName) has \"@\"\r\n  | extend UserAgent = tostring(AdditionalDetails[0].value)\r\n  | extend InitiatingUser = tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)\r\n  | extend InitiatingIpAddress = tostring(parse_json(tostring(InitiatedBy.user)).ipAddress)\r\n  | extend ModifiedApplication = tostring(TargetResources[0].displayName)\r\n  | extend ModifiedApplicationObjectId = tostring(TargetResources[0].id)\r\n  | extend ModifiedProperties = parse_json(tostring(TargetResources[0].modifiedProperties))\r\n  | extend ModifiedPropertyName = tostring(ModifiedProperties[0].displayName)\r\n  | extend ResourceAppId = parse_json(tostring(ModifiedProperties[0].newValue))[0].ResourceAppId\r\n  | where ModifiedPropertyName =~ \"RequiredResourceAccess\"\r\n  | extend Type = tostring(TargetResources[0].type)\r\n  | project-away ModifiedProperties\r\n  | project-reorder TimeGenerated, OperationName, InitiatingUser, InitiatingIpAddress, UserAgent, ModifiedApplication, ModifiedApplicationObjectId, CorrelationId, TenantId\r\n  | extend timestamp = TimeGenerated, AccountCustomEntity = InitiatingUser, IPCustomEntity = InitiatingIpAddress",
+      "queryFrequency": "PT3H",
+      "queryPeriod": "PT3H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence"
+      ],
+      "techniques": [
+        "T1098"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

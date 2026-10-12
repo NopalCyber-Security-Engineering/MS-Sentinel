@@ -1,0 +1,75 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-10-05T13:24:56.3141612Z",
+    "name": "[NopalCyber] Device Code Phishing: Unusual Device Code Flow Detected",
+    "native_rule_id": "c9d6db56-c681-4cc7-bd54-75d0eacc7665",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"c1019ec5-0000-0d00-0000-6ac3a5280000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/c9d6db56-c681-4cc7-bd54-75d0eacc7665",
+    "kind": "Scheduled",
+    "name": "c9d6db56-c681-4cc7-bd54-75d0eacc7665",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "#DONT_CORR#This alert finds sessions where a device-code flow produced multiple sign-in events (interactive + non-interactive), with mismatched user-agents or differing country/geolocation, for the same Session ID - a strong indicator of device-code phishing abuse.\nLooks for:\nBrute-forcing device code tokens\nToken replay attempts\nMalicious use of device code authentication across different devices or locations\nAnomalous sign-in behaviour suggesting account compromise",
+      "displayName": "[NopalCyber] Device Code Phishing: Unusual Device Code Flow Detected",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "Name"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-10-05T13:24:56.3141612Z",
+      "query": "let UEBAInsights = BehaviorAnalytics\n| extend  UserPrincipalName1 = tolower(UserPrincipalName) \n| extend FirstTimeUserConnectedFromCountry = tostring(ActivityInsights.FirstTimeUserConnectedFromCountry)\n| where isnotempty(FirstTimeUserConnectedFromCountry)\n| where FirstTimeUserConnectedFromCountry == True\n| distinct UserPrincipalName1;\nunion AADNonInteractiveUserSignInLogs, SigninLogs\n| where OriginalTransferMethod == \"deviceCodeFlow\" and ClientAppUsed == \"Mobile Apps and Desktop clients\"\n| where Status_string has \"0\" or Status_string has \"50199\"\n| where isnotempty(UserId)\n| where isnotempty(IPAddress)\n| where isnotempty(Location)\n| where isnotempty(UserAgent)\n| where isnotempty(SessionId)\n| extend StatusJson = parse_json(Status_string)\n| extend errorCode = tostring(StatusJson.errorCode)\n| extend LocationJson = parse_json(LocationDetails_string)\n| extend countryOrRegion = tostring(LocationJson.countryOrRegion)\n| summarize\n    set_errorCodes = make_set(errorCode),\n    set_userAgent = make_set(UserAgent),\n    set_location_countryOrRegion = make_set(countryOrRegion),\n    max_createdDateTime = max(CreatedDateTime)\n    by SessionId, UserId, UserPrincipalName, IPAddress\n| where UserPrincipalName in (UEBAInsights)\n//| where array_length(set_errorCodes) == 2\n//    and (array_length(set_userAgent) == 2 or array_length(set_location_countryOrRegion) == 2)\n\n",
+      "queryFrequency": "PT5H",
+      "queryPeriod": "PT5H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CredentialAccess"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

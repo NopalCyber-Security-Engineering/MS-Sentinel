@@ -1,0 +1,59 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-06T11:18:46.2931873Z",
+    "name": "[NopalCyber] Suspected ClickFix commands in RunMRU registry key value",
+    "native_rule_id": "5953b534-8634-4e2a-ba25-0d2cdbb9b7aa",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"c700bd38-0000-0d00-0000-68e3a5970000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/5953b534-8634-4e2a-ba25-0d2cdbb9b7aa",
+    "kind": "Scheduled",
+    "name": "5953b534-8634-4e2a-ba25-0d2cdbb9b7aa",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "In a ClickFix exploit, a command is silently copied to the clipboard when visiting a compromised web page. The user then pastes it into Windows Run believing it's a captcha or a system fix. The executed command is added to the RunMRU registry key which holds details of Windows Run Most Recently Used. This hunt is intended to identify ClickFix exploits by searching the RunMRU registry key value.",
+      "displayName": "[NopalCyber] Suspected ClickFix commands in RunMRU registry key value",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-06T11:18:46.2931873Z",
+      "query": "DeviceRegistryEvents\r\n| where RegistryKey contains \"RunMRU\"\r\n| where RegistryValueData contains \"mshta\"\r\n| where RegistryValueData contains \"http\" or RegistryValueData contains \"#\"\r\n| project Timestamp, DeviceName, RegistryValueData, RegistryValueName, ActionType, InitiatingProcessCommandLine",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "DefenseEvasion",
+        "Execution"
+      ],
+      "techniques": [
+        "T1218",
+        "T1204"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

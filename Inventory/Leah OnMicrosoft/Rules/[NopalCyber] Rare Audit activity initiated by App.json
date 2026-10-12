@@ -1,0 +1,80 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T07:18:18.0310381Z",
+    "name": "[NopalCyber] Rare Audit activity initiated by App",
+    "native_rule_id": "0131d67d-4ebf-4ee1-996d-b10a7bb1e24b",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2800099d-0000-0d00-0000-68eca7ba0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/0131d67d-4ebf-4ee1-996d-b10a7bb1e24b",
+    "kind": "Scheduled",
+    "name": "0131d67d-4ebf-4ee1-996d-b10a7bb1e24b",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "customDetails": {},
+      "description": "'Compares the current day to last 14 days of audits to identify new audit activities. Useful for tracking malicious activity related to user/group additions/removals by Azure Apps and automated approvals.'",
+      "displayName": "[NopalCyber] Rare Audit activity initiated by App",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountCustomEntity",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPCustomEntity",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T07:18:18.0310381Z",
+      "query": "  let starttime = todatetime('{{StartTimeISO}}');\r\n  let endtime = todatetime('{{EndTimeISO}}');\r\n  let auditLookback = starttime - 14d;\r\n  let propertyIgnoreList = dynamic([\"TargetId.UserType\", \"StsRefreshTokensValidFrom\", \"LastDirSyncTime\", \"DeviceOSVersion\", \"CloudDeviceOSVersion\", \"DeviceObjectVersion\"]);\r\n  let appIgnoreList = dynamic([\"Microsoft Azure AD Group-Based Licensing\"]);\r\n  let AuditTrail = AuditLogs\r\n  | where TimeGenerated between(auditLookback..starttime)\r\n  | where isnotempty(tostring(parse_json(tostring(InitiatedBy.app)).displayName))\r\n  | extend InitiatedByApp = tostring(parse_json(tostring(InitiatedBy.app)).displayName)\r\n  | extend ModProps = TargetResources.[0].modifiedProperties\r\n  | extend InitiatedByIpAddress = tostring(parse_json(tostring(InitiatedBy.app)).ipAddress)\r\n  | extend TargetUserPrincipalName = tolower(tostring(TargetResources.[0].userPrincipalName))\r\n  | extend TargetResourceName = tolower(tostring(TargetResources.[0].displayName))\r\n  | mv-expand ModProps\r\n  | where isnotempty(tostring(parse_json(tostring(ModProps.newValue))[0]))\r\n  | extend PropertyName = tostring(ModProps.displayName), newValue = tostring(parse_json(tostring(ModProps.newValue))[0])\r\n  | where PropertyName !in~ (propertyIgnoreList) and (PropertyName !~ \"Action Client Name\" and newValue !~ \"DirectorySync\") and (PropertyName !~ \"Included Updated Properties\" and newValue !~ \"LastDirSyncTime\")\r\n  | where InitiatedByApp !in~ (appIgnoreList) and OperationName !~ \"Change user license\"\r\n  | summarize by OperationName, InitiatedByApp, TargetUserPrincipalName, InitiatedByIpAddress, TargetResourceName, PropertyName;\r\n  let AccountMods = AuditLogs\r\n  | where TimeGenerated >= starttime\r\n  | where isnotempty(tostring(parse_json(tostring(InitiatedBy.app)).displayName))\r\n  | extend InitiatedByApp = tostring(parse_json(tostring(InitiatedBy.app)).displayName)\r\n  | extend ModProps = TargetResources.[0].modifiedProperties\r\n  | extend InitiatedByIpAddress = tostring(parse_json(tostring(InitiatedBy.app)).ipAddress)\r\n  | extend TargetUserPrincipalName = tolower(tostring(TargetResources.[0].userPrincipalName))\r\n  | extend TargetResourceName = tolower(tostring(TargetResources.[0].displayName))\r\n  | mv-expand ModProps\r\n  | where isnotempty(tostring(parse_json(tostring(ModProps.newValue))[0]))\r\n  | extend PropertyName = tostring(ModProps.displayName), newValue = tostring(parse_json(tostring(ModProps.newValue))[0])\r\n  | where PropertyName !in~ (propertyIgnoreList) and (PropertyName !~ \"Action Client Name\" and newValue !~ \"DirectorySync\") and (PropertyName !~ \"Included Updated Properties\" and newValue !~ \"LastDirSyncTime\")\r\n  | where InitiatedByApp !in~ (appIgnoreList) and OperationName !~ \"Change user license\"\r\n  | extend ModifiedProps = pack(\"PropertyName\",PropertyName,\"newValue\",newValue, \"Id\", Id, \"CorrelationId\", CorrelationId)\r\n  | summarize StartTimeUtc = min(TimeGenerated), EndTimeUtc = max(TimeGenerated), Activity = make_bag(ModifiedProps) by Type, InitiatedByApp, TargetUserPrincipalName, InitiatedByIpAddress, TargetResourceName, Category, OperationName, PropertyName;\r\n  let RareAudits = AccountMods | join kind= leftanti (\r\n     AuditTrail\r\n  ) on OperationName, InitiatedByApp, InitiatedByIpAddress, TargetUserPrincipalName;//, PropertyName; //uncomment if you want to see Rare Property changes.\r\n  RareAudits\r\n  | summarize StartTime = min(StartTimeUtc), EndTime = max(EndTimeUtc), make_set(Activity), make_set(PropertyName) by InitiatedByApp, OperationName, TargetUserPrincipalName, InitiatedByIpAddress, TargetResourceName\r\n  | order by TargetUserPrincipalName asc, StartTime asc\r\n  | extend timestamp = StartTime, AccountCustomEntity = TargetUserPrincipalName, HostCustomEntity = iff(set_PropertyName has_any ('DeviceOSType', 'CloudDeviceOSType'), TargetResourceName, ''), IPCustomEntity = InitiatedByIpAddress",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P14D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence",
+        "PrivilegeEscalation",
+        "LateralMovement"
+      ],
+      "techniques": [
+        "T1136"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

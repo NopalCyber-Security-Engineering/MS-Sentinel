@@ -1,0 +1,77 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-07T06:43:18.8498238Z",
+    "name": "[NopalCyber] RDP Trace Removal",
+    "native_rule_id": "cec5e86a-f201-4529-801f-75d72e362402",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"1d02e623-0000-0d00-0000-690d950c0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/cec5e86a-f201-4529-801f-75d72e362402",
+    "kind": "Scheduled",
+    "name": "cec5e86a-f201-4529-801f-75d72e362402",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Detects attempts to remove traces of Remote Desktop Protocol (RDP) activity by clearing specific event logs, deleting registry keys, or removing cache files. This rule identifies command-line actions using 'wevtutil' to clear RDP operational logs, 'reg delete' for RDP client registry keys, and 'del' or 'remove-item' for RDP bitmap cache files. It also directly monitors registry events for RDP client key deletions and file events for RDP cache file deletions.",
+      "displayName": "[NopalCyber] RDP Trace Removal",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "DeviceName",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountName",
+              "identifier": "FullName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-07T06:43:18.8498238Z",
+      "query": "let lookback = 1d;\n// Define a list of known legitimate processes that might perform these actions for tuning.\n// For example, system management tools or cleanup scripts could be added here.\nlet process_allowlist = dynamic([\"\"]);\n// Detect command-line based RDP trace removal\nlet rdp_trace_removal_cli =\n    DeviceProcessEvents\n    | where Timestamp > ago(lookback)\n    | where InitiatingProcessFileName !in (process_allowlist)\n    | where\n        // Detects clearing of the RDP operational event log using wevtutil\n        (ProcessCommandLine has \"wevtutil\" and (ProcessCommandLine has \"cl\" or ProcessCommandLine has \"clear-log\") and ProcessCommandLine has \"Microsoft-Windows-TerminalServices-LocalSessionManager/Operational\") or\n        // Detects deletion of RDP client registry keys containing connection history\n        (ProcessCommandLine has \"reg\" and ProcessCommandLine has \"delete\" and ProcessCommandLine has @\"\\Software\\Microsoft\\Terminal Server Client\\\") or\n        // Detects deletion of RDP bitmap cache files via cmd or powershell\n        (ProcessCommandLine has \"del\" and ProcessCommandLine has @\"\\Microsoft\\Terminal Server Client\\Cache\\\" and ProcessCommandLine has \".bmc\") or\n        (ProcessCommandLine has_any (\"rm\", \"remove-item\") and ProcessCommandLine has @\"\\Microsoft\\Terminal Server Client\\Cache\\\" and ProcessCommandLine has \".bmc\");\n// Detect RDP registry key deletion via direct registry events\nlet rdp_trace_removal_reg =\n    DeviceRegistryEvents\n    | where Timestamp > ago(lookback)\n    | where ActionType == \"RegistryKeyDeleted\"\n    | where InitiatingProcessFileName !in (process_allowlist)\n    // Focus on the specific RDP client history path\n    | where RegistryKey has @\"\\Software\\Microsoft\\Terminal Server Client\\Servers\" or RegistryKey has @\"\\Software\\Microsoft\\Terminal Server Client\\Default\";\n// Detect RDP cache file deletion via direct file events\nlet rdp_trace_removal_file =\n    DeviceFileEvents\n    | where Timestamp > ago(lookback)\n    | where ActionType == \"FileDeleted\"\n    | where InitiatingProcessFileName !in (process_allowlist)\n    // Focus on the specific RDP cache path and file extension\n    | where FolderPath has @\"\\Microsoft\\Terminal Server Client\\Cache\" and FileName endswith \".bmc\";\n// Union all detection methods and project key fields for investigation\nunion rdp_trace_removal_cli, rdp_trace_removal_reg, rdp_trace_removal_file\n| extend\n    DetectionMethod = case(\n                      isnotempty(ProcessCommandLine),\n                      \"CommandLine\",\n                      isnotempty(RegistryKey),\n                      \"RegistryKeyDeleted\",\n                      isnotempty(FileName),\n                      \"FileDeleted\",\n                      \"Unknown\"\n                  ),\n    SuspiciousTarget = case(\n                       isnotempty(ProcessCommandLine),\n                       ProcessCommandLine,\n                       isnotempty(RegistryKey),\n                       RegistryKey,\n                       isnotempty(FileName),\n                       strcat(FolderPath, FileName),\n                       \"Unknown\"\n                   )\n| project\n    Timestamp,\n    DeviceName,\n    AccountName = case(isnotempty(InitiatingProcessAccountName), InitiatingProcessAccountName, AccountName),\n    DetectionMethod,\n    SuspiciousTarget,\n    InitiatingProcessFileName,\n    InitiatingProcessCommandLine\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "DefenseEvasion"
+      ],
+      "techniques": [
+        "T1070"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

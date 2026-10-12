@@ -1,0 +1,103 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-08T08:43:50.760465Z",
+    "name": "SFTP File transfer folder count above threshold",
+    "native_rule_id": "ffeb13d4-9a22-4187-ab57-433573667318",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4b0223f3-0000-0d00-0000-690f02c70000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/ffeb13d4-9a22-4187-ab57-433573667318",
+    "kind": "Scheduled",
+    "name": "ffeb13d4-9a22-4187-ab57-433573667318",
+    "properties": {
+      "alertRuleTemplateName": "7355434e-09d5-4401-b56d-e03e9379dfb1",
+      "customDetails": {
+        "FilesList": "dirlist",
+        "TransferCount": "count_distinct_dirpath"
+      },
+      "description": "Identifies SFTP File Transfers with distinct folder count above certain threshold in a 15min time period.\n It requires SFTP VERBOSE loglevel to be enabled.\n Please note that entity mapping for arrays is not supported, so when there is a single value in an array, we will pull that value from the array as a single string to populate the entity to support entity mapping features within Sentinel. Additionally, if the array is multivalued, we will input a string to indicate this with a unique hash so that matching will not occur.",
+      "displayName": "SFTP File transfer folder count above threshold",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "username",
+              "identifier": "Name"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "src_ip",
+              "identifier": "Address"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Computer",
+              "identifier": "HostName"
+            }
+          ]
+        },
+        {
+          "entityType": "File",
+          "fieldMappings": [
+            {
+              "columnName": "DirSample",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": true,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [
+            "Account",
+            "Host"
+          ],
+          "lookbackDuration": "P1D",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-08T08:43:50.760465Z",
+      "query": "let threshold = 10;\nSyslog\n| where ProcessName has \"sftp\"\n    and SyslogMessage has \"close \"\n    and SyslogMessage has \" bytes read \"\n| parse SyslogMessage with \"close \\\"\" filepath \"\\\" bytes read \" readbytes: int \" written \" writtenbytes: int\n| parse kind=regex filepath with dirpath:string \"/\" filename:string\n| join kind=leftouter (\n    Syslog\n    | where ProcessName has \"sftp\" and SyslogMessage has \"session opened for\"\n    | parse SyslogMessage with \"session opened for local user \" username: string \" from [\" src_ip \"]\"\n    | project username, src_ip, ProcessID\n    )\n    on ProcessID\n| project-away ProcessID1\n| summarize count_distinct_dirpath=dcount(dirpath), dirlist=make_set(dirpath) by Computer, username, src_ip, bin(TimeGenerated, 15m)\n| where count_distinct_dirpath >= threshold\n| extend DirSample = iff(array_length(dirlist) == 1, tostring(dirlist[0]), strcat(\"SeeDirListField\",\"_\", tostring(hash(tostring(dirlist)))))\n",
+      "queryFrequency": "PT15M",
+      "queryPeriod": "PT15M",
+      "severity": "Medium",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Exfiltration"
+      ],
+      "techniques": [
+        "T1020"
+      ],
+      "templateVersion": "1.0.2",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

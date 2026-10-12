@@ -1,0 +1,75 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-02-04T09:35:10.3226903Z",
+    "name": "[NopalCyber] Data Connector Health Check - Azure Storage",
+    "native_rule_id": "77269d4f-f68f-42de-92eb-7057e5e6e523",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"1d0046cc-0000-0d00-0000-698312d00000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/77269d4f-f68f-42de-92eb-7057e5e6e523",
+    "kind": "Scheduled",
+    "name": "77269d4f-f68f-42de-92eb-7057e5e6e523",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule will identify if any Azure Storage Account logs stopped reporting to Sentinel in last 3 days",
+      "displayName": "[NopalCyber] Data Connector Health Check - Azure Storage",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Dataconnector",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "AccountName",
+              "identifier": "FullName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-02-04T09:35:10.3226903Z",
+      "query": "union isfuzzy=true\n    (StorageBlobLogs\n    | where TimeGenerated > ago(7d)\n    | summarize LastCall1 = max(TimeGenerated) by AccountName, Type),\n    (StorageFileLogs\n    | where TimeGenerated > ago(7d)\n    | summarize LastCall1 = max(TimeGenerated) by AccountName, Type),\n    (StorageTableLogs\n    | where TimeGenerated > ago(7d)\n    | summarize LastCall1 = max(TimeGenerated) by AccountName, Type),\n    (StorageQueueLogs\n    | where TimeGenerated > ago(7d)\n    | summarize LastCall1 = max(TimeGenerated) by AccountName, Type)\n| extend Dataconnector = \"Azure Storage\"\n| summarize LastCall = max(LastCall1) by Dataconnector, AccountName\n| extend LogIngestionStatus = iff(LastCall < ago(3d), 'No', 'Yes')\n| where LogIngestionStatus == \"No\"\n\n",
+      "queryFrequency": "P3D",
+      "queryPeriod": "P7D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

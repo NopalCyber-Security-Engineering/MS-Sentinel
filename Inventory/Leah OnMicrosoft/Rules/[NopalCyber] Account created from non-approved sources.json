@@ -1,0 +1,125 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T08:40:36.1070004Z",
+    "name": "[NopalCyber] Account created from non-approved sources",
+    "native_rule_id": "bc4ccbab-2ba4-4692-ab33-75687efaa9a2",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900378d-0000-0d00-0000-68f5f5860000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/bc4ccbab-2ba4-4692-ab33-75687efaa9a2",
+    "kind": "Scheduled",
+    "name": "bc4ccbab-2ba4-4692-ab33-75687efaa9a2",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "customDetails": {},
+      "description": "This query looks for an account being created from a domain that is not regularly seen in a tenant.\nAttackers may attempt to add accounts from these sources as a means of establishing persistant access to an environment.\nCreated accounts should be investigated to confirm expected creation",
+      "displayName": "[NopalCyber] Account created from non-approved sources",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAppName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAppServicePrincipalId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingUserPrincipalName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "AddedByName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "AddedByUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAadUserId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingIpAddress",
+              "identifier": "Address"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserAdded",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "UserAddedName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "UserAddedDomain",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T08:40:36.1070004Z",
+      "query": "  let core_domains = (SigninLogs\r\n    | where TimeGenerated > ago(7d)\r\n    | where ResultType == 0\r\n    | extend domain = tolower(split(UserPrincipalName, \"@\")[1])\r\n    | summarize by tostring(domain));\r\n    let alternative_domains = (SigninLogs\r\n    | where TimeGenerated > ago(7d)\r\n    | where isnotempty(AlternateSignInName)\r\n    | where ResultType == 0\r\n    | extend domain = tolower(split(AlternateSignInName, \"@\")[1])\r\n    | summarize by tostring(domain));\r\n    AuditLogs\r\n    | where TimeGenerated > ago(1d)\r\n    | where OperationName =~ \"Add User\"\r\n    | extend InitiatingAppName = tostring(InitiatedBy.app.displayName)\r\n    | extend InitiatingAppServicePrincipalId = tostring(InitiatedBy.app.servicePrincipalId)\r\n    | extend InitiatingUserPrincipalName = tostring(InitiatedBy.user.userPrincipalName)\r\n    | extend InitiatingAadUserId = tostring(InitiatedBy.user.id)\r\n    | extend InitiatingIpAddress = tostring(iff(isnotempty(InitiatedBy.user.ipAddress), InitiatedBy.user.ipAddress, InitiatedBy.app.ipAddress))\r\n    | extend UserAdded = tostring(TargetResources[0].userPrincipalName)\r\n    | extend UserAddedDomain = case(\r\n    UserAdded has \"#EXT#\", tostring(split(tostring(split(UserAdded, \"#EXT#\")[0]), \"_\")[1]),\r\n    UserAdded !has \"#EXT#\", tostring(split(UserAdded, \"@\")[1]),\r\n    UserAdded)\r\n    | where UserAddedDomain !in (core_domains) and UserAddedDomain !in (alternative_domains)\r\n    | extend AddedByName = case(\r\n    InitiatingUserPrincipalName has \"#EXT#\", tostring(split(tostring(split(InitiatingUserPrincipalName, \"#EXT#\")[0]), \"_\")[0]),\r\n    InitiatingUserPrincipalName !has \"#EXT#\", tostring(split(InitiatingUserPrincipalName, \"@\")[0]),\r\n    InitiatingUserPrincipalName)\r\n    | extend AddedByUPNSuffix = case(\r\n    InitiatingUserPrincipalName has \"#EXT#\", tostring(split(tostring(split(InitiatingUserPrincipalName, \"#EXT#\")[0]), \"_\")[1]),\r\n    InitiatingUserPrincipalName !has \"#EXT#\", tostring(split(InitiatingUserPrincipalName, \"@\")[1]),\r\n    InitiatingUserPrincipalName)\r\n    | extend UserAddedName = case(\r\n    UserAdded has \"#EXT#\", tostring(split(tostring(split(UserAdded, \"#EXT#\")[0]), \"_\")[0]),\r\n    UserAdded !has \"#EXT#\", tostring(split(UserAdded, \"@\")[0]),\r\n    UserAdded)",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P7D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence"
+      ],
+      "techniques": [
+        "T1136"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

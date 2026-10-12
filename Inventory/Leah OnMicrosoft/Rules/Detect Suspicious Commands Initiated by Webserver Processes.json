@@ -1,0 +1,82 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-08T09:12:30.0373321Z",
+    "name": "Detect Suspicious Commands Initiated by Webserver Processes",
+    "native_rule_id": "60d95b57-65ad-48fc-ab33-55738b161a37",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4d027136-0000-0d00-0000-690f09800000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/60d95b57-65ad-48fc-ab33-55738b161a37",
+    "kind": "Scheduled",
+    "name": "60d95b57-65ad-48fc-ab33-55738b161a37",
+    "properties": {
+      "alertRuleTemplateName": "fa2f7d8a-6726-465a-aa72-6f6e3d4c99d7",
+      "description": "This query was originally published in the threat analytics report, Operation Soft Cell.\nOperation Soft Cell is a series of campaigns targeting users' call logs at telecommunications providers throughout the world. These attacks date from as early as 2012.\nOperation Soft Cell operators sometimes use legitimate web server processes to launch commands, especially for network discovery and user/owner discovery. The following query detects activity of this kind.\nReference - https://www.cybereason.com/blog/operation-soft-cell-a-worldwide-campaign-against-telecommunications-providers",
+      "displayName": "Detect Suspicious Commands Initiated by Webserver Processes",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "DeviceName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "DnsDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-08T09:12:30.0373321Z",
+      "query": "// Suspicious commands launched by web server processes\nDeviceProcessEvents \n| where (((InitiatingProcessParentFileName in(\"w3wp.exe\", \"beasvc.exe\",\n    \"httpd.exe\") or InitiatingProcessParentFileName startswith \"tomcat\")\n    or InitiatingProcessFileName in(\"w3wp.exe\", \"beasvc.exe\", \"httpd.exe\") or\n    InitiatingProcessFileName startswith \"tomcat\"))\n    and FileName in~('cmd.exe', 'powershell.exe')\n| where ProcessCommandLine contains '%temp%'\n    or ProcessCommandLine has 'wget'\n    or ProcessCommandLine has 'whoami'\n    or ProcessCommandLine has 'certutil'\n    or ProcessCommandLine has 'systeminfo'\n    or ProcessCommandLine has 'ping'\n    or ProcessCommandLine has 'ipconfig'\n    or ProcessCommandLine has 'timeout'\n| summarize\n    take_any(FileName),\n    make_set(ProcessCommandLine, 100000),\n    take_any(InitiatingProcessFileName),\n    take_any(InitiatingProcessParentFileName)\n    by DeviceId, DeviceName\n| extend HostName = iff(DeviceName has '.', substring(DeviceName, 0, indexof(DeviceName, '.')), DeviceName)\n| extend DnsDomain = iff(DeviceName has '.', substring(DeviceName, indexof(DeviceName, '.') + 1), \"\")\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "High",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Execution",
+        "DefenseEvasion",
+        "Discovery"
+      ],
+      "techniques": [
+        "T1059",
+        "T1574",
+        "T1087",
+        "T1082"
+      ],
+      "templateVersion": "1.0.0",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

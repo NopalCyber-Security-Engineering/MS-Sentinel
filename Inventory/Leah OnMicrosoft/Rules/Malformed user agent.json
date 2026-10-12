@@ -1,0 +1,90 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-04-23T09:36:08.4196876Z",
+    "name": "Malformed user agent",
+    "native_rule_id": "9d0d6a97-14ad-4421-83bb-96e410decc66",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"c100549c-0000-0d00-0000-69e9e8090000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/9d0d6a97-14ad-4421-83bb-96e410decc66",
+    "kind": "Scheduled",
+    "name": "9d0d6a97-14ad-4421-83bb-96e410decc66",
+    "properties": {
+      "alertRuleTemplateName": "a357535e-f722-4afe-b375-cff362b2b376",
+      "description": "Malware authors will sometimes hardcode user agent string values when writing the network communication component of their malware. Malformed user agents can be an indication of such malware.",
+      "displayName": "Malformed user agent",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Account",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "AccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "UPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "SourceIP",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-04-23T09:36:08.4196876Z",
+      "query": "(union isfuzzy=true\n(OfficeActivity | where UserAgent != \"\"),\n(OfficeActivity\n| where RecordType in (\"AzureActiveDirectory\", \"AzureActiveDirectoryStsLogon\")\n| extend OperationName = Operation\n| parse ExtendedProperties with * 'User-Agent\\\\\":\\\\\"' UserAgent2 '\\\\' *\n| parse ExtendedProperties with * 'UserAgent\",      \"Value\": \"' UserAgent1 '\"' *\n| where isnotempty(UserAgent1) or isnotempty(UserAgent2)\n| extend UserAgent = iff( RecordType == 'AzureActiveDirectoryStsLogon', UserAgent1, UserAgent2)\n| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated) by UserAgent, SourceIP = ClientIP, Account = UserId, Type, RecordType, Operation\n),\n(AzureDiagnostics\n| where ResourceType =~ \"APPLICATIONGATEWAYS\"\n| where OperationName =~ \"ApplicationGatewayAccess\"\n| extend ClientIP = columnifexists(\"clientIP_s\", \"None\"), UserAgent = columnifexists(\"userAgent_s\", \"None\")\n| where UserAgent != '-'\n| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated) by UserAgent, SourceIP = ClientIP,  requestUri_s, httpMethod_s, host_s, requestQuery_s, Type\n),\n(\nW3CIISLog\n| where isnotempty(csUserAgent)\n| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated) by UserAgent = csUserAgent, SourceIP = cIP, Account = csUserName, Type, sSiteName, csMethod, csUriStem\n),\n(\nAWSCloudTrail\n| where isnotempty(UserAgent)\n| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated) by UserAgent, SourceIP = SourceIpAddress, Account = UserIdentityUserName, Type, EventSource, EventName\n),\n(SigninLogs\n| where isnotempty(UserAgent)\n| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated) by UserAgent, SourceIP = IPAddress, Account = UserPrincipalName, Type, OperationName, tostring(LocationDetails), tostring(DeviceDetail), AppDisplayName, ClientAppUsed\n),\n(AADNonInteractiveUserSignInLogs\n| where isnotempty(UserAgent)\n| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated) by UserAgent, SourceIP = IPAddress, Account = UserPrincipalName, Type, OperationName, tostring(LocationDetails), tostring(DeviceDetail), AppDisplayName, ClientAppUsed\n)\n)\n// Likely artefact of hardcoding\n| where UserAgent startswith \"User\" or UserAgent startswith '\\\"'\n// Incorrect casing\nor (UserAgent startswith \"Mozilla\" and not(UserAgent contains_cs \"Mozilla\"))\n// Incorrect casing\nor UserAgent contains_cs  \"(Compatible;\"\n// Missing MSIE version\nor UserAgent matches regex @\"MSIE\\s?;\"\n// Incorrect spacing around MSIE version\nor UserAgent matches regex  @\"MSIE(?:\\d|.{1,5}?\\d\\s;)\"\n| extend AccountName = split(Account, \"@\")[0], UPNSuffix = split(Account, \"@\")[1]\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "CommandAndControl",
+        "Execution"
+      ],
+      "techniques": [
+        "T1189",
+        "T1071",
+        "T1203"
+      ],
+      "templateVersion": "1.0.6",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

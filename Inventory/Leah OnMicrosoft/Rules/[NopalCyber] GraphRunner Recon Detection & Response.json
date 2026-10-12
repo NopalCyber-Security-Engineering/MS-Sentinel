@@ -1,0 +1,59 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T07:16:21.1863457Z",
+    "name": "[NopalCyber] GraphRunner Recon Detection & Response",
+    "native_rule_id": "344d03d6-46b3-477e-9937-d250a995a75c",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2800109c-0000-0d00-0000-68eca7450000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/344d03d6-46b3-477e-9937-d250a995a75c",
+    "kind": "Scheduled",
+    "name": "344d03d6-46b3-477e-9937-d250a995a75c",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection identifies potential reconnaissance activity against Microsoft Graph using the Device Code Authentication flow, a common technique used by attackers leveraging tools like GraphRunner to enumerate users, groups, and other directory data after obtaining a valid token.\n\nThe query looks at SigninLogs where the Authentication Protocol is deviceCode and the target resource is Microsoft Graph. It flags sign-ins originating from devices not joined to the organization (i.e., TrustType is neither Hybrid Azure AD joined nor Azure AD joined).\n\nSuch activity is often associated with non-corporate or attacker-controlled devices, where stolen or phished tokens are used to authenticate to Microsoft Graph APIs and perform reconnaissance without triggering traditional MFA challenges. This can be an early stage of attack in account takeover, lateral movement, or privilege escalation scenarios",
+      "displayName": "[NopalCyber] GraphRunner Recon Detection & Response",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T07:16:21.1863457Z",
+      "query": "SigninLogs\r\n| where AuthenticationProtocol == \"deviceCode\"\r\n| where ResourceDisplayName == \"Microsoft Graph\"\r\n| extend DeviceName = tostring(DeviceDetail.displayName)\r\n| extend TrustType = tostring(DeviceDetail.trustType)\r\n| where TrustType != \"Hybrid Azure AD joined\" and TrustType != \"Azure AD joined\"",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "PrivilegeEscalation",
+        "DefenseEvasion"
+      ],
+      "techniques": [
+        "T1078",
+        "T1556"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

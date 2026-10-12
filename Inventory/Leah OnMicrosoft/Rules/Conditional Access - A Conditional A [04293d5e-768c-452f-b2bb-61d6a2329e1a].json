@@ -1,0 +1,76 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T07:59:09.5793458Z",
+    "name": "Conditional Access - A Conditional Access user/group/role exclusion has changed",
+    "native_rule_id": "04293d5e-768c-452f-b2bb-61d6a2329e1a",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"280005b2-0000-0d00-0000-68ecb14e0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/04293d5e-768c-452f-b2bb-61d6a2329e1a",
+    "kind": "Scheduled",
+    "name": "04293d5e-768c-452f-b2bb-61d6a2329e1a",
+    "properties": {
+      "alertRuleTemplateName": "2ce7f00d-3b3c-41b9-ae9a-b79c19d2394e",
+      "description": "A Conditional Access user/group/role exclusion has changed in Azure AD.",
+      "displayName": "Conditional Access - A Conditional Access user/group/role exclusion has changed",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "accountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "upnSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "AlertPerResult"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT1H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T07:59:09.5793458Z",
+      "query": "// A Conditional Access user/group/role exclusion has changed.\nAuditLogs\n| where OperationName in (\"Update conditional access policy\")\n| extend excludeUsersOld = extractjson(\"$.conditions.users.excludeUsers\", tostring(TargetResources[0].modifiedProperties[0].oldValue))\n| extend excludeGroupsOld = extractjson(\"$.conditions.users.excludeGroups\", tostring(TargetResources[0].modifiedProperties[0].oldValue))\n| extend excludeRolesOld = extractjson(\"$.conditions.users.excludeRoles\", tostring(TargetResources[0].modifiedProperties[0].oldValue))\n| extend excludeUsersNew = extractjson(\"$.conditions.users.excludeUsers\", tostring(TargetResources[0].modifiedProperties[0].newValue))\n| extend excludeGroupsNew = extractjson(\"$.conditions.users.excludeGroups\", tostring(TargetResources[0].modifiedProperties[0].newValue))\n| extend excludeRolesNew = extractjson(\"$.conditions.users.excludeRoles\", tostring(TargetResources[0].modifiedProperties[0].newValue))\n| where excludeUsersOld != excludeUsersNew or excludeGroupsOld != excludeGroupsNew or excludeRolesOld != excludeRolesNew\n| extend modifiedBy = tostring(InitiatedBy.user.userPrincipalName)\n| extend accountName = tostring(split(modifiedBy, \"@\")[0])\n| extend upnSuffix = tostring(split(modifiedBy, \"@\")[1])\n| project TimeGenerated, OperationName, policy = TargetResources[0].displayName, modifiedBy, accountName, upnSuffix, result = Result,\n          excludeUsersOld, excludeUsersNew, excludeGroupsOld, excludeGroupsNew, excludeRolesOld, excludeRolesNew\n| order by TimeGenerated desc\n",
+      "queryFrequency": "PT5M",
+      "queryPeriod": "PT5M",
+      "severity": "High",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence",
+        "DefenseEvasion",
+        "CredentialAccess"
+      ],
+      "techniques": [
+        "T1098",
+        "T1078"
+      ],
+      "templateVersion": "1.0.1",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

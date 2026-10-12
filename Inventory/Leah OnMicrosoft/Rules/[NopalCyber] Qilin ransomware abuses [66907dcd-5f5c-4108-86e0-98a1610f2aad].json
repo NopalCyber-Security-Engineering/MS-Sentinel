@@ -1,0 +1,75 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-04-09T09:44:16.0971933Z",
+    "name": "[NopalCyber] Qilin ransomware abuses CPU tuning tool to disable Microsoft Defender",
+    "native_rule_id": "66907dcd-5f5c-4108-86e0-98a1610f2aad",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"720262cf-0000-0d00-0000-69d774f00000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/66907dcd-5f5c-4108-86e0-98a1610f2aad",
+    "kind": "Scheduled",
+    "name": "66907dcd-5f5c-4108-86e0-98a1610f2aad",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule detects the presence of known malicious drivers (hlpdrv.sys, rwdrv.sys) by their SHA256 hash or file path. It also identifies attempts to install these drivers via service creation commands and monitors for modifications to Windows Defender registry keys that could disable its functionality, indicating defense evasion.",
+      "displayName": "[NopalCyber] Qilin ransomware abuses CPU tuning tool to disable Microsoft Defender",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "DeviceName",
+              "identifier": "HostName"
+            }
+          ]
+        },
+        {
+          "entityType": "File",
+          "fieldMappings": [
+            {
+              "columnName": "FileName",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-04-09T09:44:16.0971933Z",
+      "query": "let MaliciousDrivers = dynamic([\n    \"bd1f381e5a3db22e88776b7873d4d2835e9a1ec620571d2b1da0c58f81c84a56\",  // hlpdrv.sys\n    \"16f83f056177c4ec24c7e99d01ca9d9d6713bd0497eeedb777a3ffefa99c97f0\", // rwdrv.sys\n    \"12fcde06ddadf1b48a61b12596e6286316fd33e850687fe4153dfd9383f0a4a0\"   // EDRKiller.exe\n    ]);\nlet SuspiciousPaths = dynamic([\n    @\"\\hlpdrv.sys\",\n    @\"\\rwdrv.sys\",\n    @\"\\EDRKiller.exe\"\n    ]);\nDeviceFileEvents\n| where SHA256 in~ (MaliciousDrivers)\n    or FolderPath has_any (SuspiciousPaths)\n| project\n    TimeGenerated,\n    DeviceName,\n    FolderPath,\n    FileName,\n    SHA256,\n    InitiatingProcessFileName,\n    InitiatingProcessCommandLine,\n    ReportId\n| union (\n    DeviceProcessEvents\n    | where ProcessCommandLine has_any (\"sc create\", \"CreateService\") and ProcessCommandLine has_any (\"hlpdrv.sys\", \"rwdrv.sys\", \"KMHLPSVC\", \"mgdsrv\")\n    | project\n        TimeGenerated,\n        DeviceName,\n        FileName,\n        ProcessCommandLine,\n        InitiatingProcessFileName,\n        InitiatingProcessCommandLine,\n        ReportId\n    )\n| union (\n    DeviceRegistryEvents\n    | where RegistryKey has_any (\n        @\"HKLM\\SYSTEM\\CurrentControlSet\\Services\\WinDefend\", \n        @\"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\"\n        )\n    | where RegistryValueName in~ (\"Start\", \"DisableAntiSpyware\", \"DisableRealtimeMonitoring\")\n    | project\n        TimeGenerated,\n        DeviceName,\n        RegistryKey,\n        RegistryValueName,\n        RegistryValueData,\n        InitiatingProcessFileName,\n        InitiatingProcessCommandLine\n    )\n| order by TimeGenerated desc\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "High",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Execution"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

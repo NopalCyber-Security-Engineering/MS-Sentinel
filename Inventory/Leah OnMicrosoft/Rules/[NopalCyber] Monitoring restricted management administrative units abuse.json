@@ -1,0 +1,61 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T07:16:18.6517406Z",
+    "name": "[NopalCyber] Monitoring restricted management administrative units abuse",
+    "native_rule_id": "d82d1063-9ab6-4d5b-a5b0-e48092c3e2d7",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2800119c-0000-0d00-0000-68eca7460000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/d82d1063-9ab6-4d5b-a5b0-e48092c3e2d7",
+    "kind": "Scheduled",
+    "name": "d82d1063-9ab6-4d5b-a5b0-e48092c3e2d7",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection identifies potential abuse or misconfiguration of Restricted Management Administrative Units (AUs) within Microsoft Entra ID (Azure AD) by monitoring critical operations.",
+      "displayName": "[NopalCyber] Monitoring restricted management administrative units abuse",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T07:16:18.6517406Z",
+      "query": "AuditLogs\r\n| where TimeGenerated > (1h)\r\n| where (OperationName == \"Add administrative unit\" and \r\nparse_json(tostring(TargetResources[0].modifiedProperties))[2].displayName == \"IsMemberManagementRestricted\" and\r\nparse_json(tostring(parse_json(tostring(TargetResources[0].modifiedProperties))[2].newValue))[0] == true) or\r\nOperationName == \"Add member to restricted management administrative unit\"\r\n| extend RestrictedAUs = TargetResources[0].displayName\r\n| extend UPN = parse_json(tostring(InitiatedBy.user)).userPrincipalName\r\n| extend IPAddress = parse_json(tostring(InitiatedBy.user)).ipAddress\r\n| project TimeGenerated, OperationName, RestrictedAUs, UPN, IPAddress, AdditionalDetails",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "Persistence",
+        "PrivilegeEscalation"
+      ],
+      "techniques": [
+        "T1078",
+        "T1098",
+        "T1548"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

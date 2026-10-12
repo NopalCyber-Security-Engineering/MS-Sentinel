@@ -1,0 +1,66 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-06T11:54:05.9883995Z",
+    "name": "[NopalCyber] DEVMAN ransomware detection",
+    "native_rule_id": "f2efd40a-037f-45e5-8b0c-f4b109254887",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"c7001e80-0000-0d00-0000-68e3addf0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/f2efd40a-037f-45e5-8b0c-f4b109254887",
+    "kind": "Scheduled",
+    "name": "f2efd40a-037f-45e5-8b0c-f4b109254887",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection looks for potential DEVMAN ransomware activity by identifying endpoints that are exhibiting both suspicious SMB behavior and ransomware-like file renaming patterns.",
+      "displayName": "[NopalCyber] DEVMAN ransomware detection",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-06T11:54:05.9883995Z",
+      "query": "let SMBProbe = 3;\r\nlet SuspiciousEP =\r\nDeviceNetworkEvents\r\n| where TimeGenerated > ago(1h)\r\n| where RemotePort == 445\r\n| where ActionType == \"ConnectionSuccess\" or ActionType == \"ConnectionFailed\"\r\n| summarize SMBConnection=dcount(LocalIP) by DeviceName\r\n| where SMBConnection > SMBProbe\r\n| project DeviceName;\r\nDeviceFileEvents\r\n| where TimeGenerated > ago(1h)\r\n| where ActionType == \"FileRenamed\"\r\n| where tolower(FileName) endswith \".devman\"\r\n| where DeviceName has_any(SuspiciousEP)",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "LateralMovement",
+        "Impact",
+        "DefenseEvasion",
+        "CredentialAccess",
+        "Collection"
+      ],
+      "techniques": [
+        "T1021",
+        "T1486",
+        "T1070",
+        "T1496",
+        "T1557",
+        "T1036"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-06T12:01:13.047402Z",
+    "name": "[NopalCyber] Detect Potential Etherhiding Activity",
+    "native_rule_id": "ae605468-76ff-414e-911b-66c9e396a026",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"0002cec5-0000-0d00-0000-690c8e0b0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/ae605468-76ff-414e-911b-66c9e396a026",
+    "kind": "Scheduled",
+    "name": "ae605468-76ff-414e-911b-66c9e396a026",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Detects network connections to blockchain APIs that are indicative of EtherHiding techniques, specifically those used by UNC5342 to retrieve malicious payloads. It identifies connections to domains containing keywords like 'explorer', 'block', 'cypher', 'eth', 'bit', 'coin', or 'crypto', combined with suspicious URL patterns such as 'eth_call' (a read-only function call for smart contracts) or 'apiKey=freekey' (a common free API key used by threat actors).",
+      "displayName": "[NopalCyber] Detect Potential Etherhiding Activity",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "DeviceName",
+              "identifier": "HostName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-06T12:01:13.047402Z",
+      "query": "let blockchainExplorerPatterns = dynamic([\r\n    \"explorer\", \"block\", \"cypher\", \"eth\", \"bit\", \"coin\", \"crypto\"\r\n]);\r\n// Define suspicious URL patterns associated with UNC5342's JADESNOW malware\r\nlet suspiciousPatterns = dynamic([\r\n    \"eth_call\", // Read-only function call used to retrieve data from smart contracts\r\n    \"apiKey=freekey\" // Free API key provided by ethplorer service, used commonly by threat actors\r\n]);\r\n// Currently commented out to increase scope of detection\r\n// Define processes that might initiate these requests (browsers, script hosts)\r\n// let initiatingProcesses = dynamic([\r\n//     \"chrome.exe\", \"msedge.exe\", \"firefox.exe\", \"iexplore.exe\", \"wscript.exe\", \"cscript.exe\", \"node.exe\"\r\n// ]);\r\nDeviceNetworkEvents\r\n// Filter for network connections from relevant processes\r\n//| where InitiatingProcessFileName in~ (initiatingProcesses)\r\n// Filter for connections to the specified blockchain explorer domains\r\n| where RemoteUrl has_any (blockchainExplorerPatterns)\r\n// Filter for URLs containing suspicious patterns\r\n| where RemoteUrl has_any (suspiciousPatterns)\r\n| project ReportId, DeviceId, Timestamp, DeviceName, InitiatingProcessFileName, InitiatingProcessCommandLine, RemoteUrl, RemoteIP, RemotePort",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CommandAndControl",
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T1102",
+        "T1566"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

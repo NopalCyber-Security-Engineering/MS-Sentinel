@@ -1,0 +1,66 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-09-24T12:59:18.7821776Z",
+    "name": "[NopalCyber] Detect usage of AccountKey/SAS to download/view data from Storage Account",
+    "native_rule_id": "51c20477-f9fc-4c82-85c6-82cbb408d86c",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"470296ac-0000-0d00-0000-6ab51ea70000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/51c20477-f9fc-4c82-85c6-82cbb408d86c",
+    "kind": "Scheduled",
+    "name": "51c20477-f9fc-4c82-85c6-82cbb408d86c",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "The threat actor might either use the storage account’s access keys or SAS token retrieved through the compromised user account provided they have the appropriate permissions or the leaked key itself may already be either an Account access key or SAS token. Access keys grant complete control while SAS key can generate a time-bound access, to authorize data transfers enabling them to view, upload, or download data at will.\n\nQuery will analyze Azure Storage Blob logs to identify cases where data (blobs) are being accessed using Account Keys or Shared Access Signatures (SAS).\nIt filters for successful download/view operations (“GetBlob”), counts the number of blobs accessed from the same IP within an hour, and flags any IPs performing more than 10 blob accesses",
+      "displayName": "[NopalCyber] Detect usage of AccountKey/SAS to download/view data from Storage Account",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "CallerIp",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-09-24T12:59:18.7821776Z",
+      "query": "let ExcludedSubnets = dynamic([\n    \"172.211.127.192/28\",\n    \"172.211.127.208/29\",\n    \"48.199.0.188/30\",\n    \"48.199.8.208/29\",\n    \"172.211.127.128/26\",\n    \"40.80.188.48/28\",\n    \"40.80.188.64/27\",\n    \"40.80.188.128/25\",\n    \"40.80.189.0/24\",\n    \"40.80.188.24/29\"\n    ]);\nStorageBlobLogs\n| where TimeGenerated > ago(1d)\n| where OperationName has \"GetBlob\"\n| where AuthenticationType in~(\"AccountKey\", \"SAS\")\n| where StatusText in~(\"Success\", \"AnonymousSuccess\", \"SASSuccess\")\n| extend CallerIp = tostring(split(CallerIpAddress, ':')[0])\n| where not(ipv4_is_private(CallerIp))\n| where not(ipv4_is_private(CallerIp))\n| where not((UserAgentHeader has \"Microsoft.Data.Mashup\") and ipv4_is_in_any_range(CallerIp, ExcludedSubnets))\n| where not((UserAgentHeader has \"azsdk-go-azblob\") and CallerIp in (\"52.178.198.13\")) //Internal to Leah\n| summarize AccessedFilesList = make_set(ObjectKey, 100), count()\n    by\n    CallerIp,\n    AccountName,\n    UserAgentHeader,\n    StatusCode,\n    Category,\n    Type,\n    bin(TimeGenerated, 1h)\n| where count_ > 100\n\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

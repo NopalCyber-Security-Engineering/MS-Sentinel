@@ -1,0 +1,77 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T06:26:45.8096072Z",
+    "name": "[NopalCyber] High Risk Sign In Around Authentication Method Added or Device Registration",
+    "native_rule_id": "4db948f7-195e-406c-a23d-885a8da21ea5",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"39008053-0000-0d00-0000-68f5d6260000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/4db948f7-195e-406c-a23d-885a8da21ea5",
+    "kind": "Scheduled",
+    "name": "4db948f7-195e-406c-a23d-885a8da21ea5",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This query shows authentication methods being added and devices registered around the time of a high risk sign in which could indicate an attempt to establish persistence on a compromised account.",
+      "displayName": "[NopalCyber] High Risk Sign In Around Authentication Method Added or Device Registration",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "RiskySignInIP",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T06:26:45.8096072Z",
+      "query": "let Lookback = 1d; \nlet TimeDeltaThreshold = 1d; \nSigninLogs \n| where TimeGenerated >= ago(Lookback) \n//Only interested in successful sign ins \n| where ResultType == 0  \n//Look for high risk level sign ins only \n//| where RiskLevelDuringSignIn == \"high\"  \n//Exclude activity from Entra Named Locations and from trusted/registered devices \n| where NetworkLocationDetails == \"[]\" and DeviceDetail.deviceId == \"\" \n| summarize\n    FirstRiskySignIn = min(TimeGenerated),\n    RiskEvents = make_set_if(RiskEventTypes_V2, RiskEventTypes_V2 != \"[]\"),\n    RiskySignInAppDisplayNames = make_set(AppDisplayName)\n    by\n    UserPrincipalName,\n    RiskySignInIP=IPAddress,\n    RiskySignInLocation=Location,\n    UserId,\n    RiskLevelDuringSignIn \n//Check for authentication methods being registered and bring in details\n| join kind=leftouter ( \n    AuditLogs \n    | where TimeGenerated >= ago(Lookback) \n    | where Category != \"ProvisioningManagement\" \n    | where OperationName == \"User registered security info\" and Result == \"success\" \n    | project\n        AuthMethodAddedTime=TimeGenerated,\n        ResultReason,\n        InitiatedBy,\n        TargetResources,\n        OperationName,\n        Result,\n        UserId=tostring(InitiatedBy.user.id),\n        AuthMethodIP=tostring(InitiatedBy.user.ipAddress) \n    )\n    on UserId \n//Check for device registrations and bring in details\n| join kind=leftouter ( \n    AuditLogs \n    | where TimeGenerated >= ago(Lookback) \n    | where Category != \"ProvisioningManagement\" \n    | where OperationName == \"Register device\" and Result == \"success\" \n    | extend\n        UserId = tostring(InitiatedBy.user.id),\n        DeviceRegistrationIP = tostring(InitiatedBy.user.ipAddress) \n    | where UserId != \"\" \n    | project\n        DeviceRegisteredTime=TimeGenerated,\n        UserId,\n        DeviceRegistrationIP,\n        AdditionalDetails,\n        OperationName,\n        Result \n    | mv-apply AdditionalDetails on (  \n        summarize by AdditionalDetails=tostring(bag_pack(tostring(AdditionalDetails.key), AdditionalDetails.value)) \n        | summarize make_bag(todynamic(AdditionalDetails)) \n        ) \n    | extend\n        RegisteredDeviceId = bag_AdditionalDetails.[\"Device Id\"],\n        RegisteredDeviceOS = bag_AdditionalDetails.[\"Device OS\"],\n        RegisteredDeviceTrustType = bag_AdditionalDetails.[\"Device Trust Type\"] \n    )\n    on UserId \n| extend\n    AuthTimeDelta = abs(AuthMethodAddedTime - FirstRiskySignIn),\n    DeviceTimeDelta = abs(DeviceRegisteredTime - FirstRiskySignIn) \n| where AuthTimeDelta <= TimeDeltaThreshold or DeviceTimeDelta <= TimeDeltaThreshold \n| project\n    FirstRiskySignIn,\n    UserPrincipalName,\n    RiskySignInIP,\n    RiskySignInLocation,\n    RiskEvents,\n    RiskySignInAppDisplayNames,\n    AuthMethodAddedTime,\n    AuthTimeDelta,\n    ResultReason,\n    AuthMethodIP,\n    DeviceRegisteredTime,\n    DeviceTimeDelta,\n    RegisteredDeviceId,\n    RegisteredDeviceOS,\n    RegisteredDeviceTrustType,\n    DeviceRegistrationIP,\n    UserId \n| order by FirstRiskySignIn asc \n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "High",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence"
+      ],
+      "techniques": [
+        "T1556"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

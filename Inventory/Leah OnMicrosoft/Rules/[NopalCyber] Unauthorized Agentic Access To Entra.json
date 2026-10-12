@@ -1,0 +1,68 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T07:25:40.7297568Z",
+    "name": "[NopalCyber] Unauthorized Agentic Access To Entra",
+    "native_rule_id": "7ab109c1-9f97-4a47-b264-388eb7823b08",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900dd69-0000-0d00-0000-68f5e3f70000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/7ab109c1-9f97-4a47-b264-388eb7823b08",
+    "kind": "Scheduled",
+    "name": "7ab109c1-9f97-4a47-b264-388eb7823b08",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule detects non corporate devices running agentic AI programs attempting",
+      "displayName": "[NopalCyber] Unauthorized Agentic Access To Entra",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T07:25:40.7297568Z",
+      "query": "SigninLogs\r\n| where TimeGenerated > ago(1h)\r\n| where Agent.agentType == \"agenticApp\" \r\nor Agent.agentType == \"agenticAppInstance\"\r\n| where DeviceDetail.deviceId == \"\" and ResultType == \"0\"",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "ResourceDevelopment"
+      ],
+      "techniques": [
+        "T1588"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

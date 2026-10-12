@@ -1,0 +1,68 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-02-03T09:59:53.3399466Z",
+    "name": "[NopalCyber] Suspicious Process Spawning from Notepad++ Updater",
+    "native_rule_id": "942f9ae8-fcff-4408-b8eb-1acbd93b4aec",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"1700076c-0000-0d00-0000-6981c7190000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/942f9ae8-fcff-4408-b8eb-1acbd93b4aec",
+    "kind": "Scheduled",
+    "name": "942f9ae8-fcff-4408-b8eb-1acbd93b4aec",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule looks for the GUP.exe process (the legitimate updater) spawning unexpected child processes like cmd.exe or the known malicious AutoUpdater.exe.",
+      "displayName": "[NopalCyber] Suspicious Process Spawning from Notepad++ Updater",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "DeviceName",
+              "identifier": "HostName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-02-03T09:59:53.3399466Z",
+      "query": "let suspicious_children = dynamic([\"update.exe\", \"AutoUpdater.exe\", \"curl.exe\", \"cmd.exe\", \"powershell.exe\", \"wscript.exe\", \"cscript.exe\", \"rundll32.exe\"]);\nDeviceProcessEvents\n| where TimeGenerated > ago(12h)\n| where InitiatingProcessFileName =~ \"gup.exe\"\n| where not(FileName =~ \"explorer.exe\" or FileName matches regex @\"^npp\\..*\\.Installer.*\\.exe$\")\n| where FileName in~ (suspicious_children) or FolderPath has_any (\"\\\\Temp\\\\\", \"\\\\tmp\\\\\", \"AppData\\\\Local\\\\\")\n| project\n    Timestamp,\n    DeviceName,\n    AccountName,\n    InitiatingProcessFileName,\n    InitiatingProcessCommandLine,\n    FileName,\n    FolderPath,\n    ProcessCommandLine\n",
+      "queryFrequency": "PT12H",
+      "queryPeriod": "PT12H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T1195"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

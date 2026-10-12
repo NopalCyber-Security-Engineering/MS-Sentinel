@@ -1,0 +1,77 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-05-14T12:20:16.0469747Z",
+    "name": "[NopalCyber] Data Connector Health Check - SentinelOne",
+    "native_rule_id": "23eb68e8-9861-4d1c-832f-22ef6c07b726",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"5c01c522-0000-0d00-0000-6a05be000000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/23eb68e8-9861-4d1c-832f-22ef6c07b726",
+    "kind": "Scheduled",
+    "name": "23eb68e8-9861-4d1c-832f-22ef6c07b726",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule will identify if any SentinelOne logs type stopped reporting to Sentinel in last 3 days",
+      "displayName": "[NopalCyber] Data Connector Health Check - SentinelOne",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Dataconnector",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Type",
+              "identifier": "FullName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-05-14T12:20:16.0469747Z",
+      "query": "union isfuzzy=true\r\n    (SentinelOneActivities_CL\r\n    | where TimeGenerated > ago(7d)\r\n    | summarize LastCall1 = max(TimeGenerated) by Type),\r\n    (SentinelOneAgents_CL\r\n    | where TimeGenerated > ago(7d)\r\n    | summarize LastCall1 = max(TimeGenerated) by Type),\r\n    (SentinelOneThreats_CL\r\n    | where TimeGenerated > ago(7d)\r\n    | summarize LastCall1 = max(TimeGenerated) by Type),\r\n    (SentinelOneAlerts_CL\r\n    | where TimeGenerated > ago(7d)\r\n    | summarize LastCall1 = max(TimeGenerated) by Type)\r\n| extend Dataconnector = \"SentinelOne\"\r\n| summarize LastCall = max(LastCall1) by Dataconnector, Type\r\n| extend LogIngestionStatus = iff(LastCall < ago(3d), 'No', 'Yes')\r\n| where LogIngestionStatus == \"No\"\r\n",
+      "queryFrequency": "P3D",
+      "queryPeriod": "P7D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [
+        "T1489"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

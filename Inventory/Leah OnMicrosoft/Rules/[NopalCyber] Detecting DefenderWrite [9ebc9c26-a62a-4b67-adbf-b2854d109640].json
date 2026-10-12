@@ -1,0 +1,58 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-05-20T05:55:51.7138898Z",
+    "name": "[NopalCyber] Detecting DefenderWrite Exploitation in Microsoft Defender for Endpoint",
+    "native_rule_id": "9ebc9c26-a62a-4b67-adbf-b2854d109640",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"a8022d6b-0000-0d00-0000-6a0d4ce80000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/9ebc9c26-a62a-4b67-adbf-b2854d109640",
+    "kind": "Scheduled",
+    "name": "9ebc9c26-a62a-4b67-adbf-b2854d109640",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection identifies suspicious file creation activities within the Microsoft Defender directory (C:\\ProgramData\\Microsoft\\Windows Defender) that may indicate DefenderWrite exploitation — a technique where threat actors abuse write permissions or inject malicious components into Microsoft Defender’s working directory to execute arbitrary code or tamper with Defender functionality.\n\nThe rule compares processes writing to this directory against a known list of legitimate Microsoft Defender processes (from an external IOC reference). Any unexpected or unrecognized process performing file creation in this sensitive directory is flagged as potentially malicious activity",
+      "displayName": "[NopalCyber] Detecting DefenderWrite Exploitation in Microsoft Defender for Endpoint",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-05-20T05:55:51.7138898Z",
+      "query": "let Lookback = 1h;\nlet MDEProcess=externaldata(DWLProcess: string)\n    [h'https://raw.githubusercontent.com/SlimKQL/Hunting-Queries-Detection-Rules/refs/heads/main/IOC/MDE.csv']\n    with (format='csv', ignoreFirstRecord=true)\n    | project DWLProcess;\nDeviceFileEvents\n| where Timestamp > ago(Lookback)\n| where ActionType == \"FileCreated\"\n| where FolderPath has \"C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\"\n| where not (InitiatingProcessFileName has_any(MDEProcess)) and isnotempty(InitiatingProcessFileName)\n| where InitiatingProcessFileName <> \"sensetvm.exe\" //PE-633\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "DefenseEvasion"
+      ],
+      "techniques": [
+        "T1070",
+        "T1562"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

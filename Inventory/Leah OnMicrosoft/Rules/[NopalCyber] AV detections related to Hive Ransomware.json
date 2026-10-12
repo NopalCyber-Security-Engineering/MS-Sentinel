@@ -1,0 +1,85 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-09-30T09:13:18.9182983Z",
+    "name": "[NopalCyber] AV detections related to Hive Ransomware",
+    "native_rule_id": "fc1d5b96-f902-4e62-8928-6a2c746f81a6",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4b0015a1-0000-0d00-0000-68db9f2f0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/fc1d5b96-f902-4e62-8928-6a2c746f81a6",
+    "kind": "Scheduled",
+    "name": "fc1d5b96-f902-4e62-8928-6a2c746f81a6",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This query looks for Microsoft Defender AV detections related to Hive Ransomware.\nIn Microsoft Sentinel the SecurityAlerts table includes only the Device Name of the affected device, this query joins the DeviceInfo table to clearly connect other information such as Device group, ip, logged on users etc. This would allow the Microsoft Sentinel analyst to have more context related to the alert, if available.",
+      "displayName": "[NopalCyber] AV detections related to Hive Ransomware",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "CompromisedEntity",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "HostNameDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "PublicIP",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-09-30T09:13:18.9182983Z",
+      "query": "  let Hive_threats = dynamic([\"Ransom:Win64/Hive\", \"Ransom:Win32/Hive\"]);\r\n  DeviceInfo\r\n  | extend DeviceName = tolower(DeviceName)\r\n  | join kind=inner ( SecurityAlert\r\n  | where ProviderName == \"MDATP\"\r\n  | extend ThreatName = tostring(parse_json(ExtendedProperties).ThreatName)\r\n  | extend ThreatFamilyName = tostring(parse_json(ExtendedProperties).ThreatFamilyName)\r\n  | where ThreatName in~ (Hive_threats) or ThreatFamilyName in~ (Hive_threats)\r\n  | extend CompromisedEntity = tolower(CompromisedEntity)\r\n  ) on $left.DeviceName == $right.CompromisedEntity\r\n  | summarize by bin(TimeGenerated, 1d), DisplayName, ThreatName, ThreatFamilyName, PublicIP, AlertSeverity, Description, tostring(LoggedOnUsers), DeviceId, TenantId , CompromisedEntity, tostring(LoggedOnUsers), ProductName, Entities\r\n  | extend HostName = tostring(split(CompromisedEntity, \".\")[0]), DomainIndex = toint(indexof(CompromisedEntity, '.'))\r\n  | extend HostNameDomain = iff(DomainIndex != -1, substring(CompromisedEntity, DomainIndex + 1), CompromisedEntity)\r\n  | project-away DomainIndex",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [
+        "T1486"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

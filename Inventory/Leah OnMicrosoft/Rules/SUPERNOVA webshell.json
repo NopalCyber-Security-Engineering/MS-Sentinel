@@ -1,0 +1,105 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-08T09:15:56.6901287Z",
+    "name": "SUPERNOVA webshell",
+    "native_rule_id": "48c49469-113d-4132-8180-f8ed7f031996",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4d02215a-0000-0d00-0000-690f0a4d0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/48c49469-113d-4132-8180-f8ed7f031996",
+    "kind": "Scheduled",
+    "name": "48c49469-113d-4132-8180-f8ed7f031996",
+    "properties": {
+      "alertRuleTemplateName": "2acc91c3-17c2-4388-938e-4eac2d5894e8",
+      "description": "Identifies SUPERNOVA webshell based on W3CIISLog data.\n References:\n - https://unit42.paloaltonetworks.com/solarstorm-supernova/",
+      "displayName": "SUPERNOVA webshell",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "csUserName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "AccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "AccountUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Computer",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "HostNameDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "cIP",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-08T09:15:56.6901287Z",
+      "query": "W3CIISLog\n| where csMethod == 'GET'\n| where isnotempty(csUriStem) and isnotempty(csUriQuery)\n| where csUriStem contains \"logoimagehandler.ashx\"\n| where csUriQuery contains \"codes\" and csUriQuery contains \"clazz\" and csUriQuery contains \"method\" and csUriQuery contains \"args\"\n| extend timestamp = TimeGenerated\n| extend HostName = tostring(split(Computer, \".\")[0]), DomainIndex = toint(indexof(Computer, '.'))\n| extend HostNameDomain = iff(DomainIndex != -1, substring(Computer, DomainIndex + 1), Computer)\n| extend AccountName = tostring(split(csUserName, \"@\")[0]), AccountUPNSuffix = tostring(split(csUserName, \"@\")[1])\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "High",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence",
+        "CommandAndControl"
+      ],
+      "techniques": [
+        "T1505",
+        "T1071"
+      ],
+      "templateVersion": "1.0.4",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

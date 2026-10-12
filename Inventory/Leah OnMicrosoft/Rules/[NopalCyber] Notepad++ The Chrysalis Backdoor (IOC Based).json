@@ -1,0 +1,66 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-02-03T09:59:25.1763796Z",
+    "name": "[NopalCyber] Notepad++ The Chrysalis Backdoor (IOC Based)",
+    "native_rule_id": "e7ce5130-3ce2-452a-890f-570172a30e5a",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"1700966b-0000-0d00-0000-6981c6fe0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/e7ce5130-3ce2-452a-890f-570172a30e5a",
+    "kind": "Scheduled",
+    "name": "e7ce5130-3ce2-452a-890f-570172a30e5a",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule detects activity related to the Chrysalis Backdoor, which is associated with the Lotus Blossom threat group. It identifies malicious activity through three main components: 1. File and process events matching a list of known malicious SHA256 hashes. 2. Network connections to known malicious IP addresses or domains. 3. Suspicious execution of 'svchost.exe' from non-standard Windows directories with specific command-line arguments, indicating potential masquerading or malicious execution.",
+      "displayName": "[NopalCyber] Notepad++ The Chrysalis Backdoor (IOC Based)",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "DeviceName",
+              "identifier": "HostName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-02-03T09:59:25.1763796Z",
+      "query": "// Define indicators\nlet MaliciousIPs = dynamic([\n    \"95.179.213.0\",\n    \"61.4.102.97\",\n    \"59.110.7.32\",\n    \"124.222.137.114\"\n    ]);\nlet MaliciousDomains = dynamic([\n    \"api.skycloudcenter.com\",\n    \"api.wiresguard.com\"\n    ]);\nlet MaliciousHashes = dynamic([\n    \"a511be5164dc1122fb5a7daa3eef9467e43d8458425b15a640235796006590c9\",\n    \"8ea8b83645fba6e23d48075a0d3fc73ad2ba515b4536710cda4f1f232718f53e\",\n    \"2da00de67720f5f13b17e9d985fe70f10f153da60c9ab1086fe58f069a156924\",\n    \"77bfea78def679aa1117f569a35e8fd1542df21f7e00e27f192c907e61d63a2e\",\n    \"3bdc4c0637591533f1d4198a72a33426c01f69bd2e15ceee547866f65e26b7ad\",\n    \"9276594e73cda1c69b7d265b3f08dc8fa84bf2d6599086b9acc0bb3745146600\",\n    \"f4d829739f2d6ba7e3ede83dad428a0ced1a703ec582fc73a4eee3df3704629a\",\n    \"4a52570eeaf9d27722377865df312e295a7a23c3b6eb991944c2ecd707cc9906\",\n    \"831e1ea13a1bd405f5bda2b9d8f2265f7b1db6c668dd2165ccc8a9c4c15ea7dd\",\n    \"0a9b8df968df41920b6ff07785cbfebe8bda29e6b512c94a3b2a83d10014d2fd\",\n    \"4c2ea8193f4a5db63b897a2d3ce127cc5d89687f380b97a1d91e0c8db542e4f8\",\n    \"e7cd605568c38bd6e0aba31045e1633205d0598c607a855e2e1bca4cca1c6eda\",\n    \"078a9e5c6c787e5532a7e728720cbafee9021bfec4a30e3c2be110748d7c43c5\",\n    \"b4169a831292e245ebdffedd5820584d73b129411546e7d3eccf4663d5fc5be3\",\n    \"7add554a98d3a99b319f2127688356c1283ed073a084805f14e33b4f6a6126fd\",\n    \"fcc2765305bcd213b7558025b2039df2265c3e0b6401e4833123c461df2de51a\"\n    ]);\n// Network events against malicious IPs/domains\nlet NetworkHits = \n    DeviceNetworkEvents\n    | where RemoteIP in (MaliciousIPs) or RemoteUrl has_any (MaliciousDomains)\n    | project\n        Timestamp,\n        DeviceName,\n        InitiatingProcessFileName,\n        RemoteIP,\n        RemoteUrl,\n        RemotePort,\n        Protocol,\n        EventType=\"Network\";\n// Process/File events against malicious hashes\nlet HashHits = \n    union DeviceProcessEvents, DeviceFileEvents\n    | where SHA256 in (MaliciousHashes) or InitiatingProcessSHA256 in (MaliciousHashes)\n    | project\n        Timestamp,\n        DeviceName,\n        FileName,\n        FolderPath,\n        SHA256,\n        InitiatingProcessFileName,\n        EventType=\"Hash\";\n// Combine both sets\nunion NetworkHits, HashHits\n| order by Timestamp desc\n",
+      "queryFrequency": "PT5H",
+      "queryPeriod": "PT5H",
+      "severity": "High",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CommandAndControl"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

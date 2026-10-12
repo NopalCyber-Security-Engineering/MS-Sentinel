@@ -1,0 +1,57 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-22T06:53:36.1909447Z",
+    "name": "[NopalCyber] Unmasking MonsterV2 Behavioral Detection – ClickFix Campaign",
+    "native_rule_id": "ff69541b-5f34-44d1-b150-ab64a730e0e1",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4300b072-0000-0d00-0000-68f87f710000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/ff69541b-5f34-44d1-b150-ab64a730e0e1",
+    "kind": "Scheduled",
+    "name": "ff69541b-5f34-44d1-b150-ab64a730e0e1",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Detects potential TA585 / MonsterV2 command-and-control (C2) behavior linked to the ClickFix campaign. This rule identifies hosts that first contact api.ipify.org (used by malware to determine external IP) and subsequently connect to a non-private IP on port 7712 or known TA585 C2 infrastructure, indicating possible beaconing activity after initial reconnaissance.",
+      "displayName": "[NopalCyber] Unmasking MonsterV2 Behavioral Detection – ClickFix Campaign",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-22T06:53:36.1909447Z",
+      "query": "let Lookback = 3d;\r\nlet PreC2Behaviour =\r\n    DeviceNetworkEvents\r\n    | where Timestamp > ago(Lookback)\r\n    | where RemoteUrl has \"api.ipify.org\"\r\n    | distinct DeviceName;\r\nlet TA585_C2_IPs = dynamic([\r\n    \"139.180.160.173\",\r\n    \"155.138.150.12\",\r\n    \"83.217.208.77\",\r\n    \"91.200.14.69\",\r\n    \"212.102.255.102\",\r\n    \"84.200.154.105\",\r\n    \"144.172.117.158\",\r\n    \"109.120.137.128\",\r\n    \"84.200.17.240\",\r\n    \"84.200.77.213\",\r\n    \"79.133.51.100\"\r\n]);\r\nDeviceNetworkEvents\r\n| where Timestamp > ago(Lookback)\r\n| where RemoteIP in (TA585_C2_IPs) and RemotePort == 7712\r\n| where DeviceName in (PreC2Behaviour)\r\n| project Timestamp, DeviceName, RemoteIP, RemotePort, RemoteUrl, LocalIP, InitiatingProcessFileName, InitiatingProcessCommandLine, InitiatingProcessSHA256, InitiatingProcessAccountUpn, DeviceId, ReportId",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CommandAndControl"
+      ],
+      "techniques": [
+        "T1071"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-08T08:57:44.0180393Z",
+    "name": "Windows Binaries Lolbins Renamed",
+    "native_rule_id": "0623bf60-d98e-48d7-b930-c5f7982cbed3",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4c025d93-0000-0d00-0000-690f06080000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/0623bf60-d98e-48d7-b930-c5f7982cbed3",
+    "kind": "Scheduled",
+    "name": "0623bf60-d98e-48d7-b930-c5f7982cbed3",
+    "properties": {
+      "alertRuleTemplateName": "cbf6ad48-fa5c-4bf7-b205-28dbadb91255",
+      "description": "This query detects the execution of renamed Windows binaries (Lolbins). This is a common technique used by adversaries to evade detection. \nRef: https://docs.paloaltonetworks.com/cortex/cortex-xdr/cortex-xdr-analytics-alert-reference/cortex-xdr-analytics-alert-reference/execution-of-renamed-lolbin.html",
+      "displayName": "Windows Binaries Lolbins Renamed",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Process",
+          "fieldMappings": [
+            {
+              "columnName": "CommandLine",
+              "identifier": "CommandLine"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Computer",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "DnsDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "User",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-08T08:57:44.0180393Z",
+      "query": "let procList = externaldata(Process:string) [@\"https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Sample%20Data/Microsoft_Lolbas_Execution_Binaries.csv\"] with (format=\"csv\", ignoreFirstRecord=True);\nEvent\n| where EventLog =~ \"Microsoft-Windows-Sysmon/Operational\" and EventID==1\n| parse EventData with * 'Image\">' Image \"<\" * 'OriginalFileName\">' OriginalFileName \"<\" *\n| where OriginalFileName has_any (procList) and not (Image has_any (procList))\n| parse EventData with * 'ProcessGuid\">' ProcessGuid \"<\" * 'Description\">' Description \"<\" * 'CommandLine\">' CommandLine \"<\" * 'CurrentDirectory\">' CurrentDirectory \"<\" * 'User\">' User \"<\" * 'LogonGuid\">' LogonGuid \"<\" * 'Hashes\">' Hashes \"<\" * 'ParentProcessGuid\">' ParentProcessGuid \"<\" * 'ParentImage\">' ParentImage \"<\" * 'ParentCommandLine\">' ParentCommandLine \"<\" * 'ParentUser\">' ParentUser \"<\" *\n| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated) by EventID, Computer, User, ParentImage, ParentProcessGuid, ParentCommandLine, ParentUser, Image, ProcessGuid, CommandLine, Description, OriginalFileName, CurrentDirectory, Hashes\n| extend HostName = iif(Computer has '.',substring(Computer,0,indexof(Computer,'.')),Computer) , DnsDomain = iif(Computer has '.',substring(Computer,indexof(Computer,'.')+1),'')\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "Medium",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Execution"
+      ],
+      "techniques": [
+        "T1059"
+      ],
+      "templateVersion": "1.0.3",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

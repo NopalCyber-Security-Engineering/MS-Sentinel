@@ -1,0 +1,120 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T08:42:07.9805619Z",
+    "name": "[NopalCyber] Service Principal Assigned Privileged Role",
+    "native_rule_id": "bbd2f6f3-e365-4d6f-bd91-4e82ef9c6f3c",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900de8d-0000-0d00-0000-68f5f5e00000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/bbd2f6f3-e365-4d6f-bd91-4e82ef9c6f3c",
+    "kind": "Scheduled",
+    "name": "bbd2f6f3-e365-4d6f-bd91-4e82ef9c6f3c",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Detects a privileged role being added to a Service Principal.\nEnsure that any assignment to a Service Principal is valid and appropriate - Service Principals should not be assigned to very highly privileged roles such as Global Admin",
+      "displayName": "[NopalCyber] Service Principal Assigned Privileged Role",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAppName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAppServicePrincipalId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingUserPrincipalName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "InitiatingAccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAccountUPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingAadUserId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "ServicePrincipalName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "InitiatingAppServicePrincipalId",
+              "identifier": "AadUserId"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "InitiatingIPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T08:42:07.9805619Z",
+      "query": "AuditLogs\r\n    | where OperationName has_all (\"member to role\", \"add\")\r\n    | where Result =~ \"Success\"\r\n    | extend type_ = tostring(TargetResources[0].type)\r\n    | where type_ =~ \"ServicePrincipal\"\r\n    | where isnotempty(TargetResources)\r\n    | extend InitiatingAppName = tostring(InitiatedBy.app.displayName)\r\n    | extend InitiatingAppServicePrincipalId = tostring(InitiatedBy.app.servicePrincipalId)\r\n    | extend InitiatingUserPrincipalName = tostring(InitiatedBy.user.userPrincipalName)\r\n    | extend InitiatingAadUserId = tostring(InitiatedBy.user.id)\r\n    | extend InitiatingIPAddress = tostring(InitiatedBy.user.ipAddress)\r\n    | extend InitiatedBy = tostring(iff(isnotempty(InitiatingUserPrincipalName),InitiatingUserPrincipalName, InitiatingAppName))\r\n    | extend ServicePrincipalName = tostring(TargetResources[0].displayName)\r\n    | extend ServicePrincipalId = tostring(TargetResources[0].id)\r\n    | mv-expand TargetResources[0].modifiedProperties\r\n    | extend TargetResources_0_modifiedProperties = columnifexists(\"TargetResources_0_modifiedProperties\", '')\r\n    | where isnotempty(TargetResources_0_modifiedProperties)\r\n    | extend displayName = tostring(TargetResources_0_modifiedProperties.displayName), newValue = tostring(parse_json(tostring(TargetResources_0_modifiedProperties.newValue)))\r\n    | where displayName == \"Role.DisplayName\" and newValue contains \"admin\"\r\n    | extend InitiatingAccountName = tostring(split(InitiatingUserPrincipalName, \"@\")[0]), InitiatingAccountUPNSuffix = tostring(split(InitiatingUserPrincipalName, \"@\")[1])\r\n    | extend TargetRole = newValue\r\n    | project-reorder TimeGenerated, ServicePrincipalName, ServicePrincipalId, InitiatedBy, TargetRole, InitiatingIPAddress",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "PrivilegeEscalation"
+      ],
+      "techniques": [
+        "T1078"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

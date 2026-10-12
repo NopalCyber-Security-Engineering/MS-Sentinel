@@ -1,0 +1,79 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "false",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T08:56:37.4124293Z",
+    "name": "[Nopal cyber] Same User - Successful logon for a given App and failure on another App within 1m and low distribution",
+    "native_rule_id": "03d6df41-b615-437b-982a-471060780180",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900bb95-0000-0d00-0000-68f5f9450000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/03d6df41-b615-437b-982a-471060780180",
+    "kind": "Scheduled",
+    "name": "03d6df41-b615-437b-982a-471060780180",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This identifies when a user account successfully logs onto a given App and within 1 minute fails to logon to a different App.\nThis may indicate a malicious attempt at accessing disallowed Apps for discovery or potential lateral movement",
+      "displayName": "[Nopal cyber] Same User - Successful logon for a given App and failure on another App within 1m and low distribution",
+      "enabled": false,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountCustomEntity",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPCustomEntity",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T08:56:37.4124293Z",
+      "query": " let logonDiff = 1m;\r\n  let Success = SigninLogs\r\n  | where ResultType == \"0\"\r\n  | where AppDisplayName !in (\"Office 365 Exchange Online\", \"Skype for Business Online\", \"Office 365 SharePoint Online\")\r\n  | project SuccessLogonTime = TimeGenerated, UserPrincipalName, IPAddress , SuccessAppDisplayName = AppDisplayName;\r\n  let Fail = SigninLogs\r\n  | where ResultType !in (\"0\", \"50140\")\r\n  | where ResultDescription !~ \"Other\"\r\n  | where AppDisplayName !in (\"Office 365 Exchange Online\", \"Skype for Business Online\", \"Office 365 SharePoint Online\")\r\n  | project FailedLogonTime = TimeGenerated, UserPrincipalName, IPAddress , FailedAppDisplayName = AppDisplayName, ResultType, ResultDescription;\r\n  let InitialDataSet =\r\n  Success | join kind= inner (\r\n  Fail\r\n  ) on UserPrincipalName, IPAddress\r\n  | where isnotempty(FailedAppDisplayName)\r\n  | where SuccessLogonTime < FailedLogonTime and FailedLogonTime - SuccessLogonTime <= logonDiff and SuccessAppDisplayName != FailedAppDisplayName;\r\n  let InitialHits =\r\n  InitialDataSet\r\n  | summarize FailedLogonTime = min(FailedLogonTime), SuccessLogonTime = min(SuccessLogonTime)\r\n  by UserPrincipalName, SuccessAppDisplayName, FailedAppDisplayName, IPAddress, ResultType, ResultDescription;\r\n  // Only take hits where there is 5 or less distinct AppDisplayNames on the success side as this limits highly active applications where failures occur more regularly\r\n  let Distribution =\r\n  InitialDataSet\r\n  | summarize count_SuccessAppDisplayName = count() by SuccessAppDisplayName, ResultType\r\n  | where count_SuccessAppDisplayName <= 5;\r\n  InitialHits | join (\r\n     Distribution\r\n  ) on SuccessAppDisplayName, ResultType\r\n  | project UserPrincipalName, SuccessLogonTime, IPAddress, SuccessAppDisplayName, FailedLogonTime, FailedAppDisplayName, ResultType, ResultDescription\r\n  | extend timestamp = SuccessLogonTime, AccountCustomEntity = UserPrincipalName, IPCustomEntity = IPAddress",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Discovery",
+        "LateralMovement"
+      ],
+      "techniques": [
+        "T1087",
+        "T1021"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

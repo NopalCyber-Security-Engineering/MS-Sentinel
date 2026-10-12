@@ -1,0 +1,60 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-16T06:57:56.4034956Z",
+    "name": "[NopalCyber] Detection of LegionLoader - Decryption Attempt of drata.dat via 7-Zip in Traiolx Directory",
+    "native_rule_id": "ec848afa-a2cf-4862-809f-f50f16466a80",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3000e78c-0000-0d00-0000-68f097780000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/ec848afa-a2cf-4862-809f-f50f16466a80",
+    "kind": "Scheduled",
+    "name": "ec848afa-a2cf-4862-809f-f50f16466a80",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection monitors the execution of 7zG.exe—the 7-Zip GUI executable—specifically when launched from the Traiolx Custom Utils or Kilo Verfair Tools directory under the user’s Roaming profile (\\\\AppData\\\\Roaming\\\\Traiolx Custom Utils). It identifies suspicious command-line activity where 7zG.exe is used to decrypt or extract a file named drata.dat, used to load second payload.",
+      "displayName": "[NopalCyber] Detection of LegionLoader - Decryption Attempt of drata.dat via 7-Zip in Traiolx Directory",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-16T06:57:56.4034956Z",
+      "query": "DeviceProcessEvents\r\n| where FileName =~ \"7zG.exe\" or ProcessVersionInfoCompanyName has \"Igor Pavlov\"\r\n| where ProcessCommandLine has_any (\"Traiolx Custom Utils\", \"Kilo Verfair Tools\")\r\n| project Timestamp, DeviceName, ActionType, FileName, FolderPath, ProcessCommandLine",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "DefenseEvasion",
+        "Execution"
+      ],
+      "techniques": [
+        "T1218",
+        "T1027",
+        "T1059"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

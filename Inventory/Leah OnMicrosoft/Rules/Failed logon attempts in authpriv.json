@@ -1,0 +1,78 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-06T10:27:40.1811841Z",
+    "name": "Failed logon attempts in authpriv",
+    "native_rule_id": "c5975bf6-20f8-49a3-9e29-ecb9f1b38497",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"fd01a64b-0000-0d00-0000-690c781c0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/c5975bf6-20f8-49a3-9e29-ecb9f1b38497",
+    "kind": "Scheduled",
+    "name": "c5975bf6-20f8-49a3-9e29-ecb9f1b38497",
+    "properties": {
+      "alertRuleTemplateName": "e7ec9fa6-e7f7-41ed-a34b-b956837a3ee6",
+      "description": "Identifies failed logon attempts from unknown users in Syslog authpriv logs. The unknown user means the account that tried to log in isn't provisioned on the machine. A few hits could indicate someone attempting to access a machine they aren't authorized to access. \nIf there are many of hits, especially from outside your network, it could indicate a brute force attack. \nDefault threshold for logon attempts is 15.",
+      "displayName": "Failed logon attempts in authpriv",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Computer",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "HostIP",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-06T10:27:40.1811841Z",
+      "query": "let threshold = 15;\n// Below pulls messages from syslog-authpriv logs where there was an authentication failure with an unknown user.\n// IP address of system attempting logon is also extracted from the SyslogMessage field. Some of these messages\n// are aggregated.\nSyslog\n| where Facility =~ \"authpriv\"\n| where SyslogMessage has \"authentication failure\" and SyslogMessage has \" uid=0\"\n| extend RemoteIP = extract(@\".*?rhost=([\\d.]+).*?\", 1,SyslogMessage)\n| project TimeGenerated, Computer, ProcessName, HostIP, RemoteIP, ProcessID\n| join kind=innerunique (\n    // Below pulls messages from syslog-authpriv logs that show each instance an unknown user tried to logon. \n    Syslog \n    | where Facility =~ \"authpriv\"\n    | where SyslogMessage has \"user unknown\"\n    | project Computer, HostIP, ProcessID\n    ) on Computer, HostIP, ProcessID\n// Count the number of failed logon attempts by External IP and internal machine\n| summarize FirstLogonAttempt = min(TimeGenerated), LatestLogonAttempt = max(TimeGenerated), TotalLogonAttempts = count() by Computer, HostIP, RemoteIP\n// Calculate the time between first and last logon attempt (AttemptPeriodLength)\n| extend TimeBetweenLogonAttempts = LatestLogonAttempt - FirstLogonAttempt\n| where TotalLogonAttempts >= threshold\n| project FirstLogonAttempt, LatestLogonAttempt, TimeBetweenLogonAttempts, TotalLogonAttempts, SourceAddress = RemoteIP, Computer,  HostIP\n| sort by Computer asc nulls last\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CredentialAccess"
+      ],
+      "techniques": [
+        "T1110"
+      ],
+      "templateVersion": "1.0.5",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

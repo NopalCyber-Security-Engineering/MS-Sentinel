@@ -1,0 +1,75 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T11:46:16.3140912Z",
+    "name": "[NopalCyber] Multi Factor Authentication Disabled For User Account",
+    "native_rule_id": "193ff859-3ab4-4c7c-8055-c6ab072e8582",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2900c23b-0000-0d00-0000-68ece68b0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/193ff859-3ab4-4c7c-8055-c6ab072e8582",
+    "kind": "Scheduled",
+    "name": "193ff859-3ab4-4c7c-8055-c6ab072e8582",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule detects changes to the \"StrongAuthenticationRequirement\" value, where the state is set to \"0\" or \"Disabled\"",
+      "displayName": "[NopalCyber] Multi Factor Authentication Disabled For User Account",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "Name"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "ModifiedBy",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T11:46:16.3140912Z",
+      "query": "// Detects when MFA (Strong Authentication) is disabled for a user\r\nAuditLogs\r\n| where LoggedByService =~ \"Core Directory\"\r\n| where Category =~ \"UserManagement\"\r\n| where OperationName =~ \"Update user\"\r\n| mv-expand ModifiedProperties = TargetResources[0].modifiedProperties\r\n| where tostring(ModifiedProperties.displayName) =~ \"StrongAuthenticationRequirement\"\r\n| where tostring(ModifiedProperties.newValue) contains '\"State\":0'\r\n| extend\r\n    TimeGenerated,\r\n    UserPrincipalName = tostring(TargetResources[0].userPrincipalName),\r\n    ModifiedBy = tostring(InitiatedBy.user.userPrincipalName),\r\n    ModifiedByApp = tostring(InitiatedBy.app.displayName),\r\n    CorrelationId,\r\n    Result,\r\n    TenantId = AADTenantId\r\n| project\r\n    TimeGenerated,\r\n    UserPrincipalName,\r\n    ModifiedBy,\r\n    ModifiedByApp,\r\n    OperationName,\r\n    Result,\r\n    CorrelationId,\r\n    AADTenantId\r\n| extend\r\n    AccountCustomEntity = UserPrincipalName,\r\n    InitiatorCustomEntity = ModifiedBy",
+      "queryFrequency": "PT5H",
+      "queryPeriod": "PT5H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CredentialAccess"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

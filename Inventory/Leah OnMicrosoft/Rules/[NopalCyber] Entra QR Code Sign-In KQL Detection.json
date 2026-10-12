@@ -1,0 +1,55 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-07T13:27:59.020379Z",
+    "name": "[NopalCyber] Entra QR Code Sign-In KQL Detection",
+    "native_rule_id": "0e6dc5c8-ea54-41b2-a710-fbe500ac3339",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2e029791-0000-0d00-0000-690df3df0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/0e6dc5c8-ea54-41b2-a710-fbe500ac3339",
+    "kind": "Scheduled",
+    "name": "0e6dc5c8-ea54-41b2-a710-fbe500ac3339",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule detects when an admin updates a user’s QR code PIN authentication method in Microsoft Entra (Azure AD) within the last 1 hour.\n\nSince QR code–based authentication methods can be abused if modified without proper change management, this detection helps identify suspicious or unauthorized changes to user authentication settings.",
+      "displayName": "[NopalCyber] Entra QR Code Sign-In KQL Detection",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-07T13:27:59.020379Z",
+      "query": "AuditLogs\r\n| where TimeGenerated > ago(1h)\r\n| where Category == \"UserManagement\"\r\n| where ActivityDisplayName == \"Admin updated security info\"\r\n| where ResultDescription == \"Admin changed QRcode Pin Authentication Method for user\"",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CredentialAccess"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

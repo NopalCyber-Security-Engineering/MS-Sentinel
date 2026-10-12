@@ -1,0 +1,99 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-04-23T11:54:54.6382882Z",
+    "name": "Potential Remote Desktop Tunneling",
+    "native_rule_id": "e6b705d6-4d7f-4cbb-97a9-2e85be0c0046",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"c4000116-0000-0d00-0000-69ea08900000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/e6b705d6-4d7f-4cbb-97a9-2e85be0c0046",
+    "kind": "Scheduled",
+    "name": "e6b705d6-4d7f-4cbb-97a9-2e85be0c0046",
+    "properties": {
+      "alertRuleTemplateName": "d2e8fd50-8d66-11ec-b909-0242ac120002",
+      "description": "The alert rule was disabled due to too many consecutive failures. Reason: This rule has been experiencing permanent errors and has been disabled. These errors indicate configuration or query issues that require manual intervention. Please review and fix the rule, then re-enable it. For troubleshooting guidance, see: https://aka.ms/AnalyticsAutoDisabledRules This query detects remote desktop authentication attempts with a localhost source address, which can indicate a tunneled login.\nRef: https://www.mandiant.com/resources/bypassing-network-restrictions-through-rdp-tunneling",
+      "displayName": "Potential Remote Desktop Tunneling",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Name",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "UPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Computer",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "DnsDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IpAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-04-23T11:54:54.6382882Z",
+      "query": "SecurityEvent\n   | where EventID in (4624,4625) and LogonType in (10) and IpAddress in (\"::1\",\"127.0.0.1\")\n   | summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated) by EventID, Computer, TargetUserName, TargetLogonId, LogonType, IpAddress\n   | extend Name=tostring(split(TargetUserName, \"@\")[0]), UPNSuffix=tostring(split(TargetUserName, \"@\")[1])\n   | extend HostName = iif(Computer has '.',substring(Computer,0,indexof(Computer,'.')),Computer) , DnsDomain = iif(Computer has '.',substring(Computer,indexof(Computer,'.')+1),'')\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "Medium",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CommandAndControl"
+      ],
+      "techniques": [
+        "T1572"
+      ],
+      "templateVersion": "1.0.4",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

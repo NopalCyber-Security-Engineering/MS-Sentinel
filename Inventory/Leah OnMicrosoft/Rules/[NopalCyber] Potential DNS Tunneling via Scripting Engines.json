@@ -1,0 +1,61 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-22T06:41:43.6253417Z",
+    "name": "[NopalCyber] Potential DNS Tunneling via Scripting Engines",
+    "native_rule_id": "d9399738-26b8-4b7e-9f70-2e1748726f1f",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4300b567-0000-0d00-0000-68f87ca80000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/d9399738-26b8-4b7e-9f70-2e1748726f1f",
+    "kind": "Scheduled",
+    "name": "d9399738-26b8-4b7e-9f70-2e1748726f1f",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection identifies network connections to external DNS servers over TCP (port 53) initiated by common scripting engines like PowerShell, Python, or WScript. While DNS over TCP is a valid protocol, it is less common for standard queries and is often used by malware for command and control (C2) or data exfiltration through DNS tunneling.",
+      "displayName": "[NopalCyber] Potential DNS Tunneling via Scripting Engines",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-22T06:41:43.6253417Z",
+      "query": "DeviceNetworkEvents\r\n// Focus on TCP-based DNS traffic, which can be indicative of tunneling.\r\n| where Protocol startswith \"Tcp\" and RemotePort == 53\r\n// Exclude connections to localhost and internal IP ranges to focus on external destinations.\r\n| where RemoteIP != \"127.0.0.1\" and not (\r\n    ipv4_is_in_range(RemoteIP, \"10.0.0.0/8\") or\r\n    ipv4_is_in_range(RemoteIP, \"172.16.0.0/12\") or\r\n    ipv4_is_in_range(RemoteIP, \"192.168.0.0/16\")\r\n)\r\n// Target scripting engines often abused for C2 and tunneling.\r\n| where InitiatingProcessFileName has_any (\"powershell.exe\", \"python.exe\", \"wscript.exe\", \"cscript.exe\")",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CommandAndControl",
+        "Execution",
+        "Exfiltration"
+      ],
+      "techniques": [
+        "T1071",
+        "T1059",
+        "T1041"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

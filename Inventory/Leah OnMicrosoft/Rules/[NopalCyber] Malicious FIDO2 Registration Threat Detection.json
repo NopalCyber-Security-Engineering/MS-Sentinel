@@ -1,0 +1,57 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-09-30T04:49:48.6537839Z",
+    "name": "[NopalCyber] Malicious FIDO2 Registration Threat Detection",
+    "native_rule_id": "78a2d2f9-dfb4-43c9-a2e8-145853b0cf48",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2e01dbdf-0000-0d00-0000-68db616e0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/78a2d2f9-dfb4-43c9-a2e8-145853b0cf48",
+    "kind": "Scheduled",
+    "name": "78a2d2f9-dfb4-43c9-a2e8-145853b0cf48",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection looks for FIDO2 (Passkey) authentication method registrations that may have originated from suspicious or malicious IP addresses.\n\nIt works in two stages:\n\nFrom AuditLogs, extract IP addresses where a user registered a new FIDO2 authentication method.\n\nCross-reference those IPs with BehaviorAnalytics enriched by Threat Intelligence indicators to check if they have been associated with known malicious activity.\n\nThis helps detect potential account takeovers where attackers attempt to register their own FIDO2 keys/passkeys on compromised accounts for persistence.",
+      "displayName": "[NopalCyber] Malicious FIDO2 Registration Threat Detection",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-09-30T04:49:48.6537839Z",
+      "query": "let PasskeyAuthenticatorIP =\r\nAuditLogs\r\n| where ResultDescription contains \"User registered Fido2 Authentication Method\"\r\n| extend AuthenticatorIP = tostring(InitiatedBy.user.ipAddress)\r\n| distinct AuthenticatorIP;\r\nBehaviorAnalytics\r\n| where TimeGenerated > ago(90d)\r\n| extend ThreatIntelIndicatorDescription = DevicesInsights.ThreatIntelIndicatorDescription\r\n| where isnotempty( ThreatIntelIndicatorDescription )\r\n| where SourceIPAddress has_any(PasskeyAuthenticatorIP)",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess"
+      ],
+      "techniques": [
+        "T1078"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-06T10:42:09.5274302Z",
+    "name": "[NopalCyber] Akira ransomware abuses CPU tuning tool to disable Microsoft Defender",
+    "native_rule_id": "c0226416-206b-4e0a-895f-a4492a903b37",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"fd018ddb-0000-0d00-0000-690c7b820000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/c0226416-206b-4e0a-895f-a4492a903b37",
+    "kind": "Scheduled",
+    "name": "c0226416-206b-4e0a-895f-a4492a903b37",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule detects the presence of known malicious drivers (hlpdrv.sys, rwdrv.sys) by their SHA256 hash or file path. It also identifies attempts to install these drivers via service creation commands and monitors for modifications to Windows Defender registry keys that could disable its functionality, indicating defense evasion.",
+      "displayName": "[NopalCyber] Akira ransomware abuses CPU tuning tool to disable Microsoft Defender",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "DeviceName",
+              "identifier": "HostName"
+            }
+          ]
+        },
+        {
+          "entityType": "File",
+          "fieldMappings": [
+            {
+              "columnName": "FileName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "FolderPath",
+              "identifier": "Directory"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-06T10:42:09.5274302Z",
+      "query": "let MaliciousDrivers = dynamic([\r\n    \"bd1f381e5a3db22e88776b7873d4d2835e9a1ec620571d2b1da0c58f81c84a56\",  // hlpdrv.sys\r\n    \"16f83f056177c4ec24c7e99d01ca9d9d6713bd0497eeedb777a3ffefa99c97f0\"   // rwdrv.sys\r\n]);\r\nlet SuspiciousPaths = dynamic([\r\n    @\"\\hlpdrv.sys\",\r\n    @\"\\rwdrv.sys\"\r\n]);\r\nDeviceFileEvents\r\n| where SHA256 in~ (MaliciousDrivers)\r\nor FolderPath has_any (SuspiciousPaths)\r\n| project TimeGenerated, DeviceName, FolderPath, FileName, SHA256, InitiatingProcessFileName, InitiatingProcessCommandLine, ReportId\r\n| union (\r\n    DeviceProcessEvents\r\n    | where ProcessCommandLine has_any (\"sc create\", \"CreateService\") and ProcessCommandLine has_any (\"hlpdrv.sys\", \"rwdrv.sys\", \"KMHLPSVC\", \"mgdsrv\")\r\n    | project TimeGenerated, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName, InitiatingProcessCommandLine, ReportId\r\n)\r\n| union (\r\n    DeviceRegistryEvents\r\n    | where RegistryKey has_any (\r\n        @\"HKLM\\SYSTEM\\CurrentControlSet\\Services\\WinDefend\", \r\n        @\"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\"\r\n    )\r\n    | where RegistryValueName in~ (\"Start\", \"DisableAntiSpyware\", \"DisableRealtimeMonitoring\")\r\n    | project TimeGenerated, DeviceName, RegistryKey, RegistryValueName, RegistryValueData, InitiatingProcessFileName, InitiatingProcessCommandLine\r\n)\r\n| order by TimeGenerated desc",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "DefenseEvasion",
+        "PrivilegeEscalation"
+      ],
+      "techniques": [
+        "T1014",
+        "T1562",
+        "T1068"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

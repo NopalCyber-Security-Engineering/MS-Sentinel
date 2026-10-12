@@ -1,0 +1,75 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-02-04T09:22:34.8021139Z",
+    "name": "[NopalCyber] Data Connector Health Check -Azure Web Application Firewall (WAF)",
+    "native_rule_id": "d93067d2-ea95-47c1-ba9a-1ca400231be3",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"1d0062be-0000-0d00-0000-69830fdb0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/d93067d2-ea95-47c1-ba9a-1ca400231be3",
+    "kind": "Scheduled",
+    "name": "d93067d2-ea95-47c1-ba9a-1ca400231be3",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule will identify if any Azure Web Application Firewall (App Gateway / FrontDoors) logs stopped reporting to Sentinel in last 1 days.",
+      "displayName": "[NopalCyber] Data Connector Health Check -Azure Web Application Firewall (WAF)",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Dataconnector",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Resource",
+              "identifier": "FullName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-02-04T09:22:34.8021139Z",
+      "query": "union isfuzzy=true\n    (AzureDiagnostics\n    | where TimeGenerated > ago(3d)\n    | where ResourceType == \"APPLICATIONGATEWAYS\"\n    | summarize LastCall1 = max(TimeGenerated) by Resource, ResourceType),\n    (AzureDiagnostics\n    | where TimeGenerated > ago(3d)\n    | where ResourceType in (\"FRONTDOORS\", \"PROFILES\")\n    | summarize LastCall1 = max(TimeGenerated) by Resource, ResourceType)\n| extend Dataconnector = \"Azure Web Application Firewall (WAF)\"\n| summarize LastCall = max(LastCall1) by Dataconnector, ResourceType, Resource\n| extend LogIngestionStatus = iff(LastCall < ago(1d), 'No', 'Yes')\n| where LogIngestionStatus == \"No\"\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P3D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T09:01:59.5239077Z",
+    "name": "[NopalCyber] Successful Sign-In From Non-Compliant Device with bulk download activity",
+    "native_rule_id": "8fd2ae41-3fcb-44f2-b9a6-642627eb675d",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900a498-0000-0d00-0000-68f5fa890000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/8fd2ae41-3fcb-44f2-b9a6-642627eb675d",
+    "kind": "Scheduled",
+    "name": "8fd2ae41-3fcb-44f2-b9a6-642627eb675d",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This query will help detect successful sign-ins from devices that are marked non-compliant along with bulk download activity.\nAttackers may attempt to get a list of accounts, groups, registration details within an environment which could help in follow-on behavior.\nBest practice is to block sign ins from non-complaint devices, however if allowed monitor these events to ensure they do not lead to other risky activity.\nReference: https://docs.microsoft.com/azure/active-directory/fundamentals/security-operations-devices#non-compliant-device-sign-in'",
+      "displayName": "[NopalCyber] Successful Sign-In From Non-Compliant Device with bulk download activity",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T09:01:59.5239077Z",
+      "query": "SigninLogs\r\n    | where ResultType == 0\r\n    | where tostring(DeviceDetail.isCompliant) == \"false\"\r\n    | where ConditionalAccessStatus == \"success\"\r\n    | extend UserPrincipalName = tolower(UserPrincipalName)\r\n    | project TimeGenerated,ResourceId, OperationName,CorrelationId,Location,AppId, Id,IPAddress,LocationDetails,OriginalRequestId,ResourceServicePrincipalId,UserId,UserPrincipalName,AADTenantId,UserType,HomeTenantId,ConditionalAccessStatus\r\n  | join kind=inner\r\n  (\r\n  AuditLogs\r\n  | where OperationName has_any  (\"Download group members\", \"Download users\", \"Download user registeration details\", \"Download groups\")\r\n  | extend IpAddress = case(\r\n  isnotempty(tostring(parse_json(tostring(InitiatedBy.user)).ipAddress)) and tostring(parse_json(tostring(InitiatedBy.user)).ipAddress) != 'null', tostring(parse_json(tostring(InitiatedBy.user)).ipAddress),\r\n  isnotempty(tostring(parse_json(tostring(InitiatedBy.app)).ipAddress)) and tostring(parse_json(tostring(InitiatedBy.app)).ipAddress) != 'null', tostring(parse_json(tostring(InitiatedBy.app)).ipAddress),'Not Available')\r\n  | extend InitiatedBy = iff(isnotempty(tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName)),\r\n    tostring(parse_json(tostring(InitiatedBy.user)).userPrincipalName), tostring(parse_json(tostring(InitiatedBy.app)).displayName)), UserRoles = tostring(parse_json(tostring(InitiatedBy.user)).ipAddress)\r\n  | extend TargetResourceName = tolower(tostring(TargetResources.[0].displayName))\r\n  | extend InitiatedBy = tolower(InitiatedBy)\r\n  | project TimeGenerated, InitiatedBy, CorrelationId, Id,AADTenantId, ResourceId, IpAddress, OperationName\r\n  ) on $left.UserPrincipalName == $right.InitiatedBy\r\n  | project TimeGenerated, UserPrincipalName, IPAddress, CorrelationId, Id, ResourceId, OperationName",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "Discovery"
+      ],
+      "techniques": [
+        "T1078",
+        "T1087"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

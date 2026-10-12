@@ -1,0 +1,68 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T07:31:09.6926722Z",
+    "name": "[NopalCyber] Detect Enumeration Activity Using Unique Identifiers and Session Aggregation",
+    "native_rule_id": "6d0c0fb5-b0d4-4696-b2dd-f63cb9c31c05",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900fd6b-0000-0d00-0000-68f5e53e0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/6d0c0fb5-b0d4-4696-b2dd-f63cb9c31c05",
+    "kind": "Scheduled",
+    "name": "6d0c0fb5-b0d4-4696-b2dd-f63cb9c31c05",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This use case detects potential enumeration of Azure Storage blobs by analyzing access patterns. It groups requests into sessions using unique identifiers, caller IPs, and user agents. The detection flags sessions with high object access counts, single-attempt patterns, and elevated failure ratios, helping uncover reconnaissance or brute-force style enumeration attempts.",
+      "displayName": "[NopalCyber] Detect Enumeration Activity Using Unique Identifiers and Session Aggregation",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "AccountName",
+              "identifier": "FullName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T07:31:09.6926722Z",
+      "query": "let maxTimeBetweenRequests = 30s;   // gap that keeps events in the same session\nlet maxWindowTime          = 24h;   // hard cap on session duration\nlet lookback               = 14d;   // history window\nlet authTypes              = dynamic(['Anonymous']);  // adjust if needed\nlet minDistinctObjects     = 10;    // minimum objects per session\nlet minFailureRatio        = 1;   // minimum failure rate (0.5 = 50 %)\nlet MicrosoftNetworks = dynamic([\"147.243.0.0/16\" ,\"69.15.0.0/17\"]);\n// ---------------------------------------\n// ----------  Core query  ----------\nStorageBlobLogs\n| where TimeGenerated > ago(lookback)\n| where AuthenticationType has_any(authTypes)\n| where Category == 'StorageRead'\n| where Uri !endswith 'favicon.ico'\n| where not (ipv4_is_in_any_range(CallerIpAddress, MicrosoftNetworks))\n// Extract full blob path\n| extend FilePathElems = array_slice(split(split(Uri, '?')[0], '/'), 3, -1)\n| extend FullPath      = strcat('/', strcat_array(FilePathElems, '/'))\n// Normalise caller IP\n| extend CallerIp = tostring(split(CallerIpAddress, ':')[0])\n| where not(ipv4_is_private(CallerIp))\n// Build identity key resilient to IP hopping\n| extend IdentityKey = strcat(AccountName, '|', UserAgentHeader)\n| project\n    TimeGenerated,\n    AccountName,\n    FullPath,\n    CallerIp,\n    StatusCode,\n    UserAgentHeader,\n    IdentityKey\n| order by TimeGenerated asc\n| serialize\n// Build activity sessions\n| extend SessionId = row_window_session(\n                         TimeGenerated,\n                         maxWindowTime,\n                         maxTimeBetweenRequests,\n                         IdentityKey != prev(IdentityKey)\n                     )\n// Status code as integer for numeric comparisons\n| extend StatusCodeInt = toint(StatusCode)\n| summarize\n    DistinctObjCount = dcount(FullPath),\n    RequestCount     = count(),\n    FailCount        = countif(StatusCodeInt >= 400),\n    CallerIPs        = make_set(CallerIp, 64),\n    SessionStart     = min(TimeGenerated),\n    SessionEnd       = max(TimeGenerated),\n    UserAgent        = any(UserAgentHeader)\n    by SessionId, IdentityKey, AccountName\n| extend\n    FailureRatio = todouble(FailCount) / RequestCount,\n    DurationMins  = datetime_diff('minute', SessionEnd, SessionStart)\n// -----------  Detection logic  ----------\n| where DistinctObjCount >= minDistinctObjects\n    and FailureRatio >= minFailureRatio\n    and DistinctObjCount == RequestCount    // touch-once rule\n// -----------  Output  ----------\n| project\n    SessionStart,\n    SessionEnd,\n    DurationMins,\n    AccountName,\n    IdentityKey,\n    DistinctObjCount,\n    RequestCount,\n    FailureRatio,\n    CallerIPCount = array_length(CallerIPs),\n    CallerIPs,\n    UserAgent\n| order by DistinctObjCount desc",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P14D",
+      "severity": "Low",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Discovery"
+      ],
+      "techniques": [
+        "T1087"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

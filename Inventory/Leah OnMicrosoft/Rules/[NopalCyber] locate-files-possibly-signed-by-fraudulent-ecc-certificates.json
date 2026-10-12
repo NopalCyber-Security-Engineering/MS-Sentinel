@@ -1,0 +1,57 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-16T08:14:11.0854231Z",
+    "name": "[NopalCyber] locate-files-possibly-signed-by-fraudulent-ecc-certificates",
+    "native_rule_id": "f723a918-a751-40fb-916e-4e86b25244ee",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"300005b7-0000-0d00-0000-68f0a9530000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/f723a918-a751-40fb-916e-4e86b25244ee",
+    "kind": "Scheduled",
+    "name": "f723a918-a751-40fb-916e-4e86b25244ee",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This query was originally published in the threat analytics report, CVE-2020-0601 certificate validation vulnerability.\nThe Windows CryptoAPI Spoofing Vulnerability, CVE-2020-0601, can be exploited to spoof code-signing certificates. For example, an attacker could forge a certificate that lists Microsoft as the issuer. This would allow an attacker to disguise a malicious executable as legitimate.\nThe vulnerability was patched with the January 2020 Security Update.\nUse the following query to locate files containing ECC certificates that might have been forged using this vulnerability. The query identifies files that don't correctly identify the signer name, yet list Microsoft as the root signer.",
+      "displayName": "[NopalCyber] locate-files-possibly-signed-by-fraudulent-ecc-certificates",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-16T08:14:11.0854231Z",
+      "query": "  DeviceFileCertificateInfo\r\n  | where Timestamp > ago(30d)\r\n  | where IsSigned == 1 and IsTrusted == 1 and IsRootSignerMicrosoft == 1\r\n  | where SignatureType == \"Embedded\"\r\n  | where Issuer !startswith \"Microsoft\" and Issuer !startswith \"Windows\"\r\n  | project Timestamp, DeviceName,SHA1,Issuer,IssuerHash,Signer,SignerHash,\r\n  CertificateCreationTime,CertificateExpirationTime,CrlDistributionPointUrls",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "DefenseEvasion"
+      ],
+      "techniques": [
+        "T1553"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

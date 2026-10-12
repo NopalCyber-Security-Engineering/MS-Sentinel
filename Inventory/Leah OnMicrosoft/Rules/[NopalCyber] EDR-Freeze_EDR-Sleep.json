@@ -1,0 +1,55 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-07T13:17:05.6614355Z",
+    "name": "[NopalCyber] EDR-Freeze/EDR-Sleep",
+    "native_rule_id": "c8c89380-1a8b-40e5-b7ad-1b7d328549c7",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2e02921d-0000-0d00-0000-690df1520000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/c8c89380-1a8b-40e5-b7ad-1b7d328549c7",
+    "kind": "Scheduled",
+    "name": "c8c89380-1a8b-40e5-b7ad-1b7d328549c7",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Detects potential abuse of LOLBAS techniques (e.g., WerFaultSecure.exe, rundll32.exe, comsvcs.dll) associated with EDR-Freeze attacks. These attacks suspend EDR or AV processes by exploiting Windows Error Reporting to create a race condition, leaving the system unmonitored.\n\nThe rule triggers when a known LOLBAS executable is run and the device stops reporting telemetry, with no legitimate shutdown or logoff activity recorded, suggesting the endpoint security agent may have been suspended.",
+      "displayName": "[NopalCyber] EDR-Freeze/EDR-Sleep",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-07T13:17:05.6614355Z",
+      "query": "// === Time Configuration ===\r\nlet LookbackWindow = 5m;         // Time window for detecting suspicious executions and last seen\r\nlet ShutdownLookback = 2h;       // Time window for checking legitimate shutdown/logoff events\r\n// === List of known LOLBAS or EDR-freeze related binaries ===\r\nlet SuspiciousBins = datatable(FileName:string)\r\n[\r\n    \"WerFaultSecure.exe\",\r\n    \"WerFault.exe\",\r\n    \"rundll32.exe\",\r\n    \"comsvcs.dll\",\r\n    \"msiexec.exe\",\r\n    \"regsvr32.exe\",\r\n    \"mshta.exe\",\r\n    \"powershell.exe\",\r\n    \"certutil.exe\",\r\n    \"wmic.exe\"\r\n];\r\n// === Find suspicious executions within the lookback window ===\r\nlet SuspiciousExec = DeviceProcessEvents\r\n| where TimeGenerated > ago(LookbackWindow)\r\n| where FileName in (SuspiciousBins)\r\n| summarize arg_max(TimeGenerated, *) by DeviceId\r\n| project DeviceId, DeviceName, SuspiciousTime = TimeGenerated;\r\n// === Find last seen activity within the same window ===\r\nlet LastSeen = DeviceProcessEvents\r\n| where TimeGenerated > ago(LookbackWindow)\r\n| summarize LastSeen = max(TimeGenerated) by DeviceId;\r\n// === Check for shutdown or logoff events over a wider lookback ===\r\nlet ShutdownEvents = DeviceEvents\r\n| where TimeGenerated > ago(ShutdownLookback)\r\n| where ActionType in~ (\"shutdownInitiated\", \"userInitiatedLogOff\", \"logoff\", \"userLoggedOff\")\r\n| summarize ShutdownTime = max(TimeGenerated) by DeviceId;\r\n// === Correlate suspicious execution with device last seen and shutdown activity ===\r\nSuspiciousExec\r\n| join kind=inner LastSeen on DeviceId\r\n| join kind=leftouter ShutdownEvents on DeviceId\r\n| extend TimeSinceLastSeen = now() - LastSeen\r\n| where LastSeen < SuspiciousTime\r\n| where isnull(ShutdownTime) or ShutdownTime < SuspiciousTime\r\n| project DeviceName, DeviceId, SuspiciousTime, LastSeen, TimeSinceLastSeen, ShutdownTime\r\n| sort by TimeSinceLastSeen desc",
+      "queryFrequency": "PT5M",
+      "queryPeriod": "PT2H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "DefenseEvasion"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

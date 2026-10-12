@@ -1,0 +1,61 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T08:25:13.4899801Z",
+    "name": "[NopalCyber] NEW Microsoft Graph API Identity Protection KQL Detection",
+    "native_rule_id": "e7617734-627b-4c17-9eb3-a6e40b0ac2d8",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"39005a85-0000-0d00-0000-68f5f1e90000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/e7617734-627b-4c17-9eb3-a6e40b0ac2d8",
+    "kind": "Scheduled",
+    "name": "e7617734-627b-4c17-9eb3-a6e40b0ac2d8",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule detects Microsoft Graph API activity originating from IP addresses flagged as suspicious by Entra ID Identity Protection within the last 48 hours.\n\nIt correlates SigninLogs (identity protection events) with MicrosoftGraphActivityLogs (Graph API usage) to surface cases where a user flagged for suspicious API traffic is also actively using the Microsoft Graph API.\n\nThis is valuable for identifying malicious or compromised applications/accounts abusing Graph API to exfiltrate data or perform reconnaissance",
+      "displayName": "[NopalCyber] NEW Microsoft Graph API Identity Protection KQL Detection",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T08:25:13.4899801Z",
+      "query": "let SuspiciousGraphUserIP =\r\nSigninLogs\r\n| where TimeGenerated > ago(48h)\r\n| where RiskEventTypes contains \"suspiciousAPITraffic\"\r\n| distinct IPAddress;\r\nMicrosoftGraphActivityLogs\r\n| where TimeGenerated > ago(48h)\r\n| where IPAddress has_any (SuspiciousGraphUserIP)",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P2D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CommandAndControl",
+        "PrivilegeEscalation",
+        "Discovery"
+      ],
+      "techniques": [
+        "T1071",
+        "T1078",
+        "T1087"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

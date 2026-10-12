@@ -1,0 +1,79 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-04-23T12:04:32.4796488Z",
+    "name": "New EXE deployed via Default Domain or Default Domain Controller Policies",
+    "native_rule_id": "8c98467d-aadf-4de5-9214-3d7059b05f92",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"c4000f40-0000-0d00-0000-69ea0ad20000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/8c98467d-aadf-4de5-9214-3d7059b05f92",
+    "kind": "Scheduled",
+    "name": "8c98467d-aadf-4de5-9214-3d7059b05f92",
+    "properties": {
+      "alertRuleTemplateName": "05b4bccd-dd12-423d-8de4-5a6fb526bb4f",
+      "description": "The alert rule was disabled due to too many consecutive failures. Reason: This rule has been experiencing permanent errors and has been disabled. These errors indicate configuration or query issues that require manual intervention. Please review and fix the rule, then re-enable it. For troubleshooting guidance, see: https://aka.ms/AnalyticsAutoDisabledRules This detection highlights executables deployed to hosts via either the Default Domain or Default Domain Controller Policies. These policies apply to all hosts or Domain Controllers and best practice is that these policies should not be used for deployment of files.\nA threat actor may use these policies to deploy files or scripts to all hosts in a domain.",
+      "displayName": "New EXE deployed via Default Domain or Default Domain Controller Policies",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Computer",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "HostNameDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-04-23T12:04:32.4796488Z",
+      "query": "let known_processes = (\n  SecurityEvent\n  // If adjusting Query Period or Frequency update these\n  | where TimeGenerated between(ago(14d)..ago(1d))\n  | where EventID == 4688\n  | where NewProcessName has_any (\"Policies\\\\{6AC1786C-016F-11D2-945F-00C04fB984F9}\", \"Policies\\\\{31B2F340-016D-11D2-945F-00C04FB984F9}\")\n  | summarize by Process);\n  SecurityEvent\n  // If adjusting Query Period or Frequency update these\n  | where TimeGenerated > ago(1d)\n  | where EventID == 4688\n  | where NewProcessName has_any (\"Policies\\\\{6AC1786C-016F-11D2-945F-00C04fB984F9}\", \"Policies\\\\{31B2F340-016D-11D2-945F-00C04FB984F9}\")\n  | where Process !in (known_processes)\n  // This will likely apply to multiple hosts so summarize these data\n  | summarize FirstSeen=min(TimeGenerated), LastSeen=max(TimeGenerated) by Process, NewProcessName, CommandLine, Computer\n  | extend HostName = tostring(split(Computer, \".\")[0]), DomainIndex = toint(indexof(Computer, '.'))\n  | extend HostNameDomain = iff(DomainIndex != -1, substring(Computer, DomainIndex + 1), Computer)\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P14D",
+      "severity": "High",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Execution",
+        "LateralMovement"
+      ],
+      "techniques": [
+        "T1072",
+        "T1570"
+      ],
+      "templateVersion": "1.0.2",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

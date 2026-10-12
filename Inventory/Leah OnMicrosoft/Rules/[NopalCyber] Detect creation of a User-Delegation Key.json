@@ -1,0 +1,86 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T06:38:00.6621403Z",
+    "name": "[NopalCyber] Detect creation of a User-Delegation Key",
+    "native_rule_id": "825be7e2-6c50-4dc8-85f6-bcdc70fcf1f1",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900b956-0000-0d00-0000-68f5d8c90000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/825be7e2-6c50-4dc8-85f6-bcdc70fcf1f1",
+    "kind": "Scheduled",
+    "name": "825be7e2-6c50-4dc8-85f6-bcdc70fcf1f1",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection identifies when a User Delegation Key is created in an Azure Storage account. A user delegation key allows a user or service principal, authenticated through Azure AD, to generate Shared Access Signatures (SAS) with fine-grained access control. The operation GetUserDelegationKey is used to request such keys via the Azure Storage REST API",
+      "displayName": "[NopalCyber] Detect creation of a User-Delegation Key",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "AzureResource",
+          "fieldMappings": [
+            {
+              "columnName": "StorageAccount",
+              "identifier": "ResourceId"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "CallerIpAddress",
+              "identifier": "Address"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Caller",
+              "identifier": "Name"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T06:38:00.6621403Z",
+      "query": "// Replace with your table name where storage blob logs are stored\r\nStorageBlobLogs\r\n| where OperationName == \"GetUserDelegationKey\" // the REST API that issues a delegation key\r\n| project TimeGenerated,\r\n          StorageAccount = _ResourceId,\r\n          Caller = AccountName,   // or Identity, if available\r\n          AuthenticationType,\r\n          ObjectKey,\r\n          StatusCode = toint(StatusCode),\r\n          RequestUri = tostring(Uri),\r\n          CorrelationId = tostring(CorrelationId),\r\n          SignedTid = tostring(TenantId),\r\n          CallerIpAddress\r\n| where StatusCode == 200",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "PrivilegeEscalation"
+      ],
+      "techniques": [
+        "T1404"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

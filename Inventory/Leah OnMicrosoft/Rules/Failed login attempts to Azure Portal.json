@@ -1,0 +1,86 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-09-24T15:12:28.0233525Z",
+    "name": "Failed login attempts to Azure Portal",
+    "native_rule_id": "ed1b2d45-3f3f-45f7-a964-a825937b76a8",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"6102117c-0000-0d00-0000-6ab53ddd0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/ed1b2d45-3f3f-45f7-a964-a825937b76a8",
+    "kind": "Scheduled",
+    "name": "ed1b2d45-3f3f-45f7-a964-a825937b76a8",
+    "properties": {
+      "alertRuleTemplateName": "223db5c1-1bf8-47d8-8806-bed401b356a4",
+      "description": "Identifies failed login attempts in the Microsoft Entra ID SigninLogs to the Azure Portal.  Many failed logon attempts or some failed logon attempts from multiple IPs could indicate a potential brute force attack.\nThe following are excluded due to success and non-failure results:\nReferences: https://docs.microsoft.com/azure/active-directory/reports-monitoring/reference-sign-ins-error-codes\n0 - successful logon\n50125 - Sign-in was interrupted due to a password reset or password registration entry.\n50140 - This error occurred due to 'Keep me signed in' interrupt when the user was signing-in.",
+      "displayName": "Failed login attempts to Azure Portal",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserPrincipalName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "Name",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "UPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-09-24T15:12:28.0233525Z",
+      "query": "let timeRange = 1d;\nlet lookBack = 7d;\nlet threshold_Failed = 10;\nlet threshold_FailedwithSingleIP = 20;\nlet threshold_IPAddressCount = 3;\nlet isGUID = \"[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}\";\nlet NopalCyberIA = dynamic([\"131.229.221.46\", \"183.82.110.189\", \"125.20.98.2\"]);\nlet NopalCyberAcc = dynamic([\"soc@nopalcyber.com\"]);\nlet aadFunc = (tableName: string) {\n    let azPortalSignins = materialize (table(tableName)\n        | where TimeGenerated >= ago(lookBack)\n        // Azure Portal only\n        | where AppDisplayName =~ \"Azure Portal\")\n    ;\n    let successPortalSignins = azPortalSignins\n        | where TimeGenerated >= ago(timeRange)\n        // Azure Portal only and exclude non-failure Result Types\n        | where ResultType in(\"0\", \"50125\", \"50140\")\n        // Tagging identities not resolved to friendly names\n        //| extend Unresolved = iff(Identity matches regex isGUID, true, false)\n        | distinct TimeGenerated, UserPrincipalName\n    ;\n    let failPortalSignins = azPortalSignins\n        | where TimeGenerated >= ago(timeRange)\n        // Azure Portal only and exclude non-failure Result Types\n        | where ResultType !in(\"0\", \"50125\", \"50140\", \"70044\", \"70043\")\n        // Tagging identities not resolved to friendly names\n        | extend Unresolved = iff(Identity matches regex isGUID, true, false)\n    ;\n    // Verify there is no success for the same connection attempt after the fail\n    let failnoSuccess = failPortalSignins\n        | join kind = leftouter (\n            successPortalSignins\n            )\n            on UserPrincipalName\n        | where TimeGenerated > TimeGenerated1 or isempty(TimeGenerated1)\n        | project-away TimeGenerated1, UserPrincipalName1\n    ;\n    // Lookup up resolved identities from last 7 days\n    let identityLookup = azPortalSignins\n        | where TimeGenerated >= ago(lookBack)\n        | where not(Identity matches regex isGUID)\n        | summarize\n            by\n            UserId,\n            lu_UserDisplayName = UserDisplayName,\n            lu_UserPrincipalName = UserPrincipalName;\n    // Join resolved names to unresolved list from portal signins\n    let unresolvedNames = failnoSuccess\n        | where Unresolved == true\n        | join kind = inner (\n            identityLookup\n            )\n            on UserId\n        | extend UserDisplayName = lu_UserDisplayName, UserPrincipalName = lu_UserPrincipalName\n        | project-away lu_UserDisplayName, lu_UserPrincipalName;\n    // Join Signins that had resolved names with list of unresolved that now have a resolved name\n    let u_azPortalSignins = failnoSuccess\n        | where Unresolved == false\n        | union unresolvedNames;\n    u_azPortalSignins\n    | extend\n        DeviceDetail = todynamic(DeviceDetail),\n        Status = todynamic(DeviceDetail),\n        LocationDetails = todynamic(LocationDetails)\n    | extend\n        Status = strcat(ResultType, \": \", ResultDescription),\n        OS = tostring(DeviceDetail.operatingSystem),\n        Browser = tostring(DeviceDetail.browser)\n    | extend\n        State = tostring(LocationDetails.state),\n        City = tostring(LocationDetails.city),\n        Region = tostring(LocationDetails.countryOrRegion)\n    | extend FullLocation = strcat(Region, '|', State, '|', City)\n    | summarize\n        TimeGenerated = make_list(TimeGenerated, 100),\n        Status = make_list(Status, 100),\n        IPAddresses = make_list(IPAddress, 100),\n        IPAddressCount = dcount(IPAddress),\n        FailedLogonCount = count()\n        by\n        UserPrincipalName,\n        UserId,\n        UserDisplayName,\n        AppDisplayName,\n        Browser,\n        OS,\n        FullLocation,\n        Type\n    | mvexpand TimeGenerated, IPAddresses, Status\n    | extend\n        TimeGenerated = todatetime(tostring(TimeGenerated)),\n        IPAddress = tostring(IPAddresses),\n        Status = tostring(Status)\n    | project-away IPAddresses\n    | summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated)\n        by\n        UserPrincipalName,\n        UserId,\n        UserDisplayName,\n        Status,\n        FailedLogonCount,\n        IPAddress,\n        IPAddressCount,\n        AppDisplayName,\n        Browser,\n        OS,\n        FullLocation,\n        Type\n    | where (IPAddressCount >= threshold_IPAddressCount and FailedLogonCount >= threshold_Failed) or FailedLogonCount >= threshold_FailedwithSingleIP\n    | extend\n        Name = tostring(split(UserPrincipalName, '@', 0)[0]),\n        UPNSuffix = tostring(split(UserPrincipalName, '@', 1)[0])\n};\nlet aadSignin = aadFunc(\"SigninLogs\");\nlet aadNonInt = aadFunc(\"AADNonInteractiveUserSignInLogs\");\nunion isfuzzy = true aadSignin, aadNonInt\n| where not((UserPrincipalName in(NopalCyberAcc) and IPAddress in(NopalCyberIA)))\n\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P7D",
+      "severity": "Low",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CredentialAccess"
+      ],
+      "techniques": [
+        "T1110"
+      ],
+      "templateVersion": "1.0.7",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

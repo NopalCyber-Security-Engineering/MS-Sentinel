@@ -1,0 +1,79 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-09-03T10:33:10.8235982Z",
+    "name": "Doppelpaymer Stop Services",
+    "native_rule_id": "4d8786ee-49b4-4d69-af12-b214c30a3451",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"d903a1a7-0000-0d00-0000-68b819670000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/4d8786ee-49b4-4d69-af12-b214c30a3451",
+    "kind": "Scheduled",
+    "name": "4d8786ee-49b4-4d69-af12-b214c30a3451",
+    "properties": {
+      "alertRuleTemplateName": "5bdc1504-880c-4b30-a39c-7c746535928d",
+      "description": "This query was originally published in the threat analytics report, Doppelpaymer: More human-operated ransomware. There is also a related blog.\nDoppelPaymer is ransomware that is spread manually by human operators. These operators have exhibited extensive knowledge of system administration and common network security misconfigurations. They often use stolen credentials from over-privileged service accounts to turn off security software, run malicious commands, and spread malware throughout an organization.\nThe following query detects attempts to stop security services.\nThe See also section below lists links to other queries associated with DoppelPaymer.\nReferences:\nhttps://msrc-blog.microsoft.com/2019/11/20/customer-guidance-for-the-dopplepaymer-ransomware/\nhttps://www.microsoft.com/en-us/wdsi/threats/malware-encyclopedia-description?Name=Ransom:Win32/DoppelPaymer.KM!MTB",
+      "displayName": "Doppelpaymer Stop Services",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "DeviceName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "DnsDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-09-03T10:33:10.8235982Z",
+      "query": "// Attempts to stop services and allow ransomware execution\nDeviceProcessEvents\n| where InitiatingProcessFileName startswith \"psexe\" and FileName =~ \"powershell.exe\" and\n  ProcessCommandLine has \"stop-service\" and ProcessCommandLine has \"sql\" and ProcessCommandLine has \"msexchange\"\n| extend HostName = iff(DeviceName has '.', substring(DeviceName, 0, indexof(DeviceName, '.')), DeviceName)\n| extend DnsDomain = iff(DeviceName has '.', substring(DeviceName, indexof(DeviceName, '.') + 1), \"\")\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "High",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Execution",
+        "DefenseEvasion"
+      ],
+      "techniques": [
+        "T1059",
+        "T1562"
+      ],
+      "templateVersion": "1.0.0",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

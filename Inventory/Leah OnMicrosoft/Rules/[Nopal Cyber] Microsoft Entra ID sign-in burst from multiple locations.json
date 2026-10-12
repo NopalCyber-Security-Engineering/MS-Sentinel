@@ -1,0 +1,68 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T08:49:35.1876509Z",
+    "name": "[Nopal Cyber] Microsoft Entra ID sign-in burst from multiple locations",
+    "native_rule_id": "9d72995b-81f7-4fe8-a7f4-f3b0f91f2397",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900c891-0000-0d00-0000-68f5f79f0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/9d72995b-81f7-4fe8-a7f4-f3b0f91f2397",
+    "kind": "Scheduled",
+    "name": "9d72995b-81f7-4fe8-a7f4-f3b0f91f2397",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Highlights accounts associated with multiple authentications from different geographical locations in a short period of time",
+      "displayName": "[Nopal Cyber] Microsoft Entra ID sign-in burst from multiple locations",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountCustomEntity",
+              "identifier": "FullName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T08:49:35.1876509Z",
+      "query": "let starttime = todatetime('{{StartTimeISO}}');\r\n  let endtime = todatetime('{{EndTimeISO}}');\r\n  let common_locations = (SigninLogs\r\n    | where TimeGenerated between(starttime..endtime)\r\n    | extend locationString= strcat(tostring(LocationDetails[\"countryOrRegion\"]), \"/\",\r\n    tostring(LocationDetails[\"state\"]))\r\n    | where locationString != \"//\"\r\n    | summarize count() by locationString\r\n    | take 100\r\n    | project locationString);\r\n  let signIns = (SigninLogs\r\n    | where TimeGenerated between(starttime..endtime)\r\n    | extend locationString= strcat(tostring(LocationDetails[\"countryOrRegion\"]), \"/\",\r\n    tostring(LocationDetails[\"state\"]))\r\n    | where locationString != \"//\" and locationString !endswith \"/\"\r\n    | where locationString !in (common_locations));\r\n  // Adjust these to tune query\r\n  let lookupWindow = 10m;\r\n  let lookupBin = lookupWindow / 2.0; // lookup bin = equal to 1/2 of the lookup window\r\n  let threshold = 2;\r\n  let users = (signIns\r\n  | summarize dcount(locationString) by Identity\r\n  | where dcount_locationString > threshold\r\n  | project Identity);\r\n    signIns\r\n    | where Identity in (users)\r\n    | project-rename Start=TimeGenerated\r\n    | extend TimeKey = bin(Start, lookupBin)\r\n    | join kind = inner (\r\n    signIns\r\n    | project-rename End=TimeGenerated, EndLocationString=locationString\r\n      // TimeKey on the right side of the join - emulates this authentication appearing several times\r\n      | extend TimeKey = range(bin(End - lookupWindow, lookupBin),\r\n      bin(End, lookupBin), lookupBin)\r\n      | mvexpand TimeKey to typeof(datetime) // translate TimeKey arrange range to a column\r\n    ) on Identity, TimeKey\r\n    | where End > Start\r\n    | project tostring(Start), tostring(End), locationString, EndLocationString, UserPrincipalName, timeSpan = End - Start, Identity, IPAddress, UserAgent\r\n    | where locationString != EndLocationString\r\n    | summarize ips=makeset(IPAddress), UAs=makeset(UserAgent) by timeSpan, Identity, locationString, EndLocationString, Start, End, UserPrincipalName\r\n    | extend timestamp = Start, AccountCustomEntity = UserPrincipalName\r\n    | order by Identity",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CredentialAccess"
+      ],
+      "techniques": [
+        "T1110"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

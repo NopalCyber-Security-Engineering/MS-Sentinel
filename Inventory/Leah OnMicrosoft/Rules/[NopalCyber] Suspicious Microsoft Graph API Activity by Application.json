@@ -1,0 +1,77 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T06:22:31.4613289Z",
+    "name": "[NopalCyber] Suspicious Microsoft Graph API Activity by Application",
+    "native_rule_id": "cdda5d9c-195f-46ff-bf92-c5c0560bb5c8",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"39003052-0000-0d00-0000-68f5d5270000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/cdda5d9c-195f-46ff-bf92-c5c0560bb5c8",
+    "kind": "Scheduled",
+    "name": "cdda5d9c-195f-46ff-bf92-c5c0560bb5c8",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection identifies potentially malicious or unauthorized activity performed through the Microsoft Graph API by applications or service principals that are not part of an approved allowlist",
+      "displayName": "[NopalCyber] Suspicious Microsoft Graph API Activity by Application",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountCustomEntity",
+              "identifier": "Name"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IpCustomEntity",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T06:22:31.4613289Z",
+      "query": "// Allowlist for trusted applications/service principals that are expected to perform these actions. \nlet initiatorAllowList = dynamic([\n    \"Microsoft PIM\",\n    \"Microsoft Entra Connect\",\n    \"Azure AD Connect\"\n    // Add App IDs or Display Names of trusted applications, such as DevOps or monitoring tools.\n]);\n// Part 1: Detects adding credentials to an application or service principal.\nlet credentialAddition = AuditLogs\n| where TimeGenerated > ago(1d)\n| where Category == \"ApplicationManagement\"\n| where OperationName in (\"Update application\", \"Update service principal\", \"Add service principal credentials\")\n| where Result == \"Success\"\n| where isnotempty(InitiatedBy.app)\n| where not(tostring(InitiatedBy.app.displayName) in (initiatorAllowList))\n| mv-expand ModifiedProperties = TargetResources[0].modifiedProperties\n| where tostring(ModifiedProperties.displayName) has_any (\"Credentials\", \"KeyCredential\")\n| where isnotempty(tostring(ModifiedProperties.newValue))\n| extend TargetApp = TargetResources[0],\n         InitiatorIpAddress = tostring(InitiatedBy.user.ipAddress),\n         InitiatorAppId = tostring(InitiatedBy.app.appId),\n         InitiatorDisplayName = tostring(InitiatedBy.app.displayName),\n         TargetDisplayName = tostring(TargetResources.displayName),\n         TargetId = tostring(TargetResources.id)\n| summarize arg_max(TimeGenerated, *) by InitiatorAppId, InitiatorDisplayName, TargetDisplayName, TargetId, CorrelationId\n| extend Activity = \"Credential Added to Application/SP\";\n// Part 2: Detects adding a new owner to an application or service principal.\nlet ownerAddition = AuditLogs\n| where TimeGenerated > ago(1d)\n| where Category == \"ApplicationManagement\"\n| where OperationName has \"Add owner to\"\n| where Result == \"Success\"\n| where isnotempty(InitiatedBy.app)\n| where not(tostring(InitiatedBy.app.displayName) in (initiatorAllowList))\n| extend Target = TargetResources[0],\n         AddedOwnerInfo = TargetResources.modifiedProperties[0].newValue,\n         InitiatorIpAddress = tostring(InitiatedBy.user.ipAddress),\n         InitiatorAppId = tostring(InitiatedBy.app.appId),\n         InitiatorDisplayName = tostring(InitiatedBy.app.displayName),\n         TargetDisplayName = tostring(TargetResources.displayName),\n         TargetId = tostring(TargetResources.id)\n| summarize AddedOwners = make_set(AddedOwnerInfo), arg_max(TimeGenerated, *) by InitiatorAppId, InitiatorDisplayName, TargetDisplayName, TargetId, CorrelationId\n| extend Activity = \"Owner Added to Application/SP\";\n// Part 3: Detects modification of a Conditional Access policy by an application.\nlet caPolicyModification = AuditLogs\n| where TimeGenerated > ago(1d)\n| where OperationName == \"Update Conditional Access policy\"\n| where Result == \"Success\"\n| where isnotempty(InitiatedBy.app)\n| where not(tostring(InitiatedBy.app.displayName) in (initiatorAllowList))\n| extend TargetPolicy = TargetResources[0],\n         InitiatorIpAddress = tostring(InitiatedBy.user.ipAddress),\n         InitiatorAppId = tostring(InitiatedBy.app.appId),\n         InitiatorDisplayName = tostring(InitiatedBy.app.displayName),\n         TargetDisplayName = tostring(TargetResources.displayName),\n         TargetId = tostring(TargetResources.id)\n| summarize arg_max(TimeGenerated, *) by InitiatorAppId, InitiatorDisplayName, TargetDisplayName, TargetId, CorrelationId\n| extend Activity = \"Conditional Access Policy Modified\";\n// Union all suspicious activities\nunion credentialAddition, ownerAddition, caPolicyModification\n| extend timestamp = TimeGenerated,\n         AccountCustomEntity = InitiatorDisplayName,\n         IpCustomEntity = InitiatorIpAddress\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Low",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence"
+      ],
+      "techniques": [
+        "T1098"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

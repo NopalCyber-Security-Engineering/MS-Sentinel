@@ -1,0 +1,75 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-02-04T09:31:40.0076491Z",
+    "name": "[NopalCyber] Data Connector Health Check - Azure Key Vault",
+    "native_rule_id": "6b547a77-c61a-42f0-93dd-b9cf159f1060",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"1d00b7c8-0000-0d00-0000-698311fd0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/6b547a77-c61a-42f0-93dd-b9cf159f1060",
+    "kind": "Scheduled",
+    "name": "6b547a77-c61a-42f0-93dd-b9cf159f1060",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule will identify if any Azure Firewall resource logs stopped reporting to Sentinel in last 3 days.",
+      "displayName": "[NopalCyber] Data Connector Health Check - Azure Key Vault",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Dataconnector",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Resource",
+              "identifier": "FullName"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-02-04T09:31:40.0076491Z",
+      "query": "AzureDiagnostics\n| where TimeGenerated > ago(7d)\n| where ResourceProvider == \"MICROSOFT.KEYVAULT\"\n| extend Dataconnector = \"Azure Key Vault\"\n| summarize LastCall = max(TimeGenerated) by Dataconnector, ResourceType, Resource\n| extend LogIngestionStatus = iff(LastCall < ago(3d), 'No', 'Yes')\n| where LogIngestionStatus == \"No\"\n",
+      "queryFrequency": "P3D",
+      "queryPeriod": "P7D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

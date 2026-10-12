@@ -1,0 +1,120 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-08T09:17:08.888794Z",
+    "name": "Detect Malicious Usage of Recovery Tools to Delete Backup Files",
+    "native_rule_id": "7ab1c189-eaa0-412b-8294-bf17eee7f228",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4d027567-0000-0d00-0000-690f0a960000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/7ab1c189-eaa0-412b-8294-bf17eee7f228",
+    "kind": "Scheduled",
+    "name": "7ab1c189-eaa0-412b-8294-bf17eee7f228",
+    "properties": {
+      "alertDetailsOverride": {
+        "alertDescriptionFormat": "A system tool {{TargetProcessName}} ProcessId: ({{TargetProcessId}}) with {{CommandLine}} used to delete backup files.",
+        "alertDisplayNameFormat": "Tool {{TargetProcessName}} used to delete backup files on {{DvcHostname}} by {{TargetUsername}}"
+      },
+      "alertRuleTemplateName": "259de2c1-c546-4c6d-a17c-df639722f4d7",
+      "description": "This analytic rule detects usage of recovery tools vssadmin, wbadmin, wmic and bcedit to delete backup files or change recovery configuration. Adversaries may use these tools to delete shadow copies and backup files to prevent recovery of files.\nhttps://attack.mitre.org/techniques/T1490/",
+      "displayName": "Detect Malicious Usage of Recovery Tools to Delete Backup Files",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "DvcHostname",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "DvcDomain",
+              "identifier": "DnsDomain"
+            },
+            {
+              "columnName": "NTDomain",
+              "identifier": "NTDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "DvcIpAddr",
+              "identifier": "Address"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Username",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "UPNSuffix",
+              "identifier": "UPNSuffix"
+            },
+            {
+              "columnName": "NTDomain",
+              "identifier": "NTDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "Process",
+          "fieldMappings": [
+            {
+              "columnName": "TargetProcessId",
+              "identifier": "ProcessId"
+            },
+            {
+              "columnName": "CommandLine",
+              "identifier": "CommandLine"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "AlertPerResult"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-08T09:17:08.888794Z",
+      "query": "_ASim_ProcessEvent\n| where TargetProcessFilename has_any ('vssadmin.exe', 'wbadmin.exe', 'wmic.exe')\n| where CommandLine has_all ('delete', 'shadow')\n| union isfuzzy=True \n    (_ASim_ProcessEvent\n    | where TargetProcessFilename =~ 'bcedit.exe'\n    | where CommandLine has_all ('/set', 'recoveryenabled no')\n    )\n| project\n    TimeGenerated,\n    DvcHostname,\n    DvcIpAddr,\n    DvcDomain,\n    TargetUsername,\n    TargetUsernameType,\n    TargetProcessName,\n    TargetProcessId,\n    CommandLine\n| extend Username = iff(tostring(TargetUsernameType) == 'Windows', tostring(split(TargetUsername, '\\\\')[1]), TargetUsername)\n| extend NTDomain = iff(tostring(TargetUsernameType) == 'Windows', tostring(split(TargetUsername, '\\\\')[0]), TargetUsername)\n| extend Username = iff(tostring(TargetUsernameType) == 'UPN', tostring(split(TargetUsername, '@')[0]), Username)\n| extend UPNSuffix = iff(tostring(TargetUsernameType) == 'UPN', tostring(split(TargetUsername, '@')[1]), '')\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "High",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [
+        "T1490"
+      ],
+      "templateVersion": "1.0.0",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

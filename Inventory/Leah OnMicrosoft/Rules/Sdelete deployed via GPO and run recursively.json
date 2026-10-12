@@ -1,0 +1,94 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2026-04-23T12:02:35.226608Z",
+    "name": "Sdelete deployed via GPO and run recursively",
+    "native_rule_id": "04f11831-71b2-4e3a-9a02-f1f383a976c0",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"c400b836-0000-0d00-0000-69ea0a5b0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/04f11831-71b2-4e3a-9a02-f1f383a976c0",
+    "kind": "Scheduled",
+    "name": "04f11831-71b2-4e3a-9a02-f1f383a976c0",
+    "properties": {
+      "alertRuleTemplateName": "d9f28fdf-abc8-4f1a-a7e7-1aaec87a2fc5",
+      "description": "The alert rule was disabled due to too many consecutive failures. Reason: This rule has been experiencing permanent errors and has been disabled. These errors indicate configuration or query issues that require manual intervention. Please review and fix the rule, then re-enable it. For troubleshooting guidance, see: https://aka.ms/AnalyticsAutoDisabledRules This query looks for the Sdelete process being run recursively after being deployed to a host via GPO. Attackers could use this technique to deploy Sdelete to multiple host and delete data on them.",
+      "displayName": "Sdelete deployed via GPO and run recursively",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "TargetAccount",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "AccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "AccountNTDomain",
+              "identifier": "NTDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Computer",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "HostNameDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2026-04-23T12:02:35.226608Z",
+      "query": "SecurityEvent\n  | where EventID == 4688\n  | where Process =~ \"svchost.exe\"\n  | where CommandLine has \"-k GPSvcGroup\" or CommandLine has \"-s gpsvc\"\n  | extend timekey = bin(TimeGenerated, 1m)\n  | project timekey, NewProcessId, Computer\n  | join kind=inner (SecurityEvent\n  | where EventID == 4688\n  | where Process =~ \"sdelete.exe\" or CommandLine has \"sdelete\"\n  | where ParentProcessName endswith \"svchost.exe\"\n  | where CommandLine has_all (\"-s\", \"-r\")\n  | extend newProcess = Process\n  | extend timekey = bin(TimeGenerated, 1m)\n  ) on $left.NewProcessId == $right.ProcessId, timekey, Computer\n  | extend HostName = tostring(split(Computer, \".\")[0]), DomainIndex = toint(indexof(Computer, '.'))\n  | extend HostNameDomain = iff(DomainIndex != -1, substring(Computer, DomainIndex + 1), Computer)\n  | extend AccountName = tostring(split(TargetAccount, @'\\')[1]), AccountNTDomain = tostring(split(TargetAccount, @'\\')[0])\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [
+        "T1485"
+      ],
+      "templateVersion": "1.0.2",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

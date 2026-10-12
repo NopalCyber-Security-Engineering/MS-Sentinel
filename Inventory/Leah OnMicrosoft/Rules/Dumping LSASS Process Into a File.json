@@ -1,0 +1,86 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-08T08:38:27.3060048Z",
+    "name": "Dumping LSASS Process Into a File",
+    "native_rule_id": "04523ef4-5946-468c-a3fc-109637489205",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4b02f8b3-0000-0d00-0000-690f01830000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/04523ef4-5946-468c-a3fc-109637489205",
+    "kind": "Scheduled",
+    "name": "04523ef4-5946-468c-a3fc-109637489205",
+    "properties": {
+      "alertRuleTemplateName": "a7b9df32-1367-402d-b385-882daf6e3020",
+      "description": "Adversaries may attempt to access credential material stored in the process memory of the Local Security Authority Subsystem Service (LSASS).\nAfter a user logs on, the system generates and stores a variety of credential materials in LSASS process memory.\nThese credential materials can be harvested by an administrative user or system and used to conduct lateral movement using alternate authentication materials.\nAs well as in-memory techniques, the LSASS process memory can be dumped from the target host and analyzed on a local system.\nRef: https://attack.mitre.org/techniques/T1003/001/",
+      "displayName": "Dumping LSASS Process Into a File",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "Computer",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "DnsDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "Process",
+          "fieldMappings": [
+            {
+              "columnName": "SourceImage",
+              "identifier": "CommandLine"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-08T08:38:27.3060048Z",
+      "query": "Event\n| where EventLog =~ \"Microsoft-Windows-Sysmon/Operational\" and EventID==10\n| parse EventData with * 'TargetImage\">' TargetImage \"<\" * 'GrantedAccess\">' GrantedAccess \"<\" * 'CallTrace\">' CallTrace \"<\" * \n| where GrantedAccess =~ \"0x1FFFFF\" and TargetImage =~ \"C:\\\\Windows\\\\System32\\\\lsass.exe\" and CallTrace has_any (\"dbghelp.dll\",\"dbgcore.dll\")\n| parse EventData with * 'SourceProcessGUID\">' SourceProcessGUID \"<\" * 'SourceImage\">' SourceImage \"<\" *\n| summarize StartTime = min(TimeGenerated), EndTime = max(TimeGenerated) by EventID, Computer, SourceProcessGUID, SourceImage, GrantedAccess, TargetImage, CallTrace\n| extend HostName = iif(Computer has '.',substring(Computer,0,indexof(Computer,'.')),Computer) , DnsDomain = iif(Computer has '.',substring(Computer,indexof(Computer,'.')+1),'')\n",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "PT1H",
+      "severity": "High",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CredentialAccess"
+      ],
+      "techniques": [
+        "T1003"
+      ],
+      "templateVersion": "1.0.3",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

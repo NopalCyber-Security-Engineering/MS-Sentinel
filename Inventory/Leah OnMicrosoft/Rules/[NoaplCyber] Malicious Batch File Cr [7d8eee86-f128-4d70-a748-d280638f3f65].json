@@ -1,0 +1,57 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-06T10:54:21.7469599Z",
+    "name": "[NoaplCyber] Malicious Batch File Creation in Startup Folder - Self-Propagating Malware Spreading Via WhatsApp, Targets Brazilian Users",
+    "native_rule_id": "7d8eee86-f128-4d70-a748-d280638f3f65",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"fe01cd4e-0000-0d00-0000-690c7e5e0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/7d8eee86-f128-4d70-a748-d280638f3f65",
+    "kind": "Scheduled",
+    "name": "7d8eee86-f128-4d70-a748-d280638f3f65",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Detects the creation of batch (.bat) files within the Windows Startup folder, a common persistence mechanism. The rule prioritizes detection of files matching known malicious patterns, specifically 'HealthApp-*.bat' associated with the SORVEPOTEL malware, and flags other generic batch file creations in the Startup folder for investigation.",
+      "displayName": "[NoaplCyber] Malicious Batch File Creation in Startup Folder - Self-Propagating Malware Spreading Via WhatsApp, Targets Brazilian Users",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-06T10:54:21.7469599Z",
+      "query": "DeviceFileEvents\r\n| where Timestamp > ago(30d)\r\n| where ActionType == \"FileCreated\"\r\n| where FileName endswith \".bat\"\r\n| where FolderPath has @\"\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\"\r\n// Priority detection for known SORVEPOTEL naming pattern\r\n| extend IsSORVEPOTELPattern = case(\r\n    FileName matches regex @\"HealthApp-[a-f0-9]{6}\\.bat\", \"High - Known pattern\",\r\n    FileName matches regex @\"[A-Z]{3,}-[0-9a-f]{6}\\.bat\", \"Medium - Similar pattern\",\r\n    \"Low - Generic BAT in Startup\"\r\n)\r\n| extend\r\n    CreatingProcess = InitiatingProcessFileName,\r\n    ParentProcess = InitiatingProcessParentFileName\r\n// Correlate with potential LNK/PowerShell parent processes\r\n| project \r\n    Timestamp,\r\n    DeviceName,\r\n    FileName,\r\n    FolderPath,\r\n    IsSORVEPOTELPattern,\r\n    CreatingProcess,\r\n    InitiatingProcessCommandLine,\r\n    ParentProcess,\r\n    SHA256,\r\n    SHA1,\r\n    MD5\r\n| sort by IsSORVEPOTELPattern asc, Timestamp desc",
+      "queryFrequency": "PT1H",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence"
+      ],
+      "techniques": [
+        "T1547"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

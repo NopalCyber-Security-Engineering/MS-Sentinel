@@ -1,0 +1,58 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T07:17:33.7509384Z",
+    "name": "[NopalCyber] Detect privilege escalation to Global Admin role via compromised service principal",
+    "native_rule_id": "63c5e1f0-b890-4f78-9c17-2f66fc77173e",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"28009e9c-0000-0d00-0000-68eca78e0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/63c5e1f0-b890-4f78-9c17-2f66fc77173e",
+    "kind": "Scheduled",
+    "name": "63c5e1f0-b890-4f78-9c17-2f66fc77173e",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "The below Sentinel KQL analytics rule is able to detect potential privilege escalation to Global Admin role via compromised service principal",
+      "displayName": "[NopalCyber] Detect privilege escalation to Global Admin role via compromised service principal",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T07:17:33.7509384Z",
+      "query": "let GA = dynamic(['GA1@acme.com', 'GA2@acme.com', 'GA3@acme.com']);\r\nAuditLogs \r\n| where TimeGenerated > ago(1h)\r\n| where Category == \"RoleManagement\"\r\n| where ActivityDisplayName == \"Add member to role\"\r\n| where TargetResources contains \"Global Administrator\"\r\n| extend UPN = tostring(TargetResources[0].userPrincipalName)\r\n| where not (UPN has_any(GA))\r\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "PrivilegeEscalation"
+      ],
+      "techniques": [
+        "T1078",
+        "T1098"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-09-03T09:05:33.1192244Z",
+    "name": "Potential Ransomware activity related to Cobalt Strike",
+    "native_rule_id": "b4d32dc5-1b35-4689-b7e3-f736e2570597",
+    "platform": "microsoft-sentinel",
+    "severity": "High",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"d2039901-0000-0d00-0000-68b804df0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/b4d32dc5-1b35-4689-b7e3-f736e2570597",
+    "kind": "Scheduled",
+    "name": "b4d32dc5-1b35-4689-b7e3-f736e2570597",
+    "properties": {
+      "alertRuleTemplateName": "4bd9ce9d-8586-4beb-8fdb-bd018cacbe7d",
+      "description": "This query searches for alerts related to suspected ransomware and Cobalt Strike activity, a tool used in numerous ransomware campaigns. It looks for alerts that indicate potential ransomware activity, such as attempts to clear security event logs, delete backup files, and execute Cobalt Strike malware.",
+      "displayName": "Potential Ransomware activity related to Cobalt Strike",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "DeviceName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "DnsDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountFullName",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "AccountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "AccountDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "RemoteIP",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-09-03T09:05:33.1192244Z",
+      "query": "// Look for sc.exe disabling services\nAlertInfo \n// Attempts to clear security event logs. \n| where Title in(\"Event log was cleared\", \n// List alerts flagging attempts to delete backup files. \n\"File backups were deleted\", \n// Potential Cobalt Strike activity - Note that other threat activity can also \n// trigger alerts for suspicious decoded content \n\"Suspicious decoded content\", \n// Cobalt Strike activity \n\"\\'Atosev\\' malware was detected\", \n\"\\'Ploty\\' malware was detected\", \n\"\\'Bynoco\\' malware was detected\",\n\"\\'Cobaltstrike\\' malware was detected\",\n\"Echo command over pipe on localhost\",\n\"Known attack framework activity was observed\",\n\"An active \\'Cobaltstrike\\' malware was detected\",\n\"Suspicious \\'CobaltStrike\\' behavior was prevented\",\n\"Suspicious process launch by Rundll32.exe\") \n| extend AlertTime = TimeGenerated | distinct AlertTime, AlertId, Title \n| join AlertEvidence on $left.AlertId == $right.AlertId\n| summarize by DeviceId, AlertTime, Title, AlertId\n// Get device IDs\n| join DeviceLogonEvents on $left.DeviceId == $right.DeviceId \n// Creating 10 day Window surrounding alert activity \n| where TimeGenerated < AlertTime + 12h and TimeGenerated > AlertTime - 12h // Projecting specific columns \n| project Title, DeviceName, DeviceId, TimeGenerated, LogonType, AccountDomain, AccountName, AccountSid, AlertTime, AlertId, RemoteIP, RemoteDeviceName\n| extend AccountFullName = tostring(strcat(AccountDomain, \"\\\\\", AccountName))\n| extend HostName = iff(DeviceName has '.', substring(DeviceName, 0, indexof(DeviceName, '.')), DeviceName)\n| extend DnsDomain = iff(DeviceName has '.', substring(DeviceName, indexof(DeviceName, '.') + 1), \"\")\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "High",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Execution",
+        "Persistence",
+        "DefenseEvasion",
+        "Impact"
+      ],
+      "techniques": [
+        "T1059",
+        "T1078",
+        "T1070",
+        "T1490"
+      ],
+      "templateVersion": "1.0.1",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

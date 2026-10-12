@@ -1,0 +1,104 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2024-06-11T09:57:38.7960208Z",
+    "name": "Detect CoreBackUp Deletion Activity from related Security Alerts",
+    "native_rule_id": "3ebb2edb-f5c9-4b09-8542-3cfc9e9b112b",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"a200b5c3-0000-0d00-0000-66681f940000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/3ebb2edb-f5c9-4b09-8542-3cfc9e9b112b",
+    "kind": "Scheduled",
+    "name": "3ebb2edb-f5c9-4b09-8542-3cfc9e9b112b",
+    "properties": {
+      "alertRuleTemplateName": "011c84d8-85f0-4370-b864-24c13455aa94",
+      "description": "The query identifies any efforts by an attacker to delete backup containers, while also searching for any security alerts that may be linked to the same activity, in order to uncover additional information about the attacker's actions.' \nThough such an activity could be legitimate as part of business operation, some ransomware actors may perform such operation to cause interruption to regular business services.",
+      "displayName": "Detect CoreBackUp Deletion Activity from related Security Alerts",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "UserName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "NTDomain",
+              "identifier": "NTDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "AzureResource",
+          "fieldMappings": [
+            {
+              "columnName": "_ResourceId",
+              "identifier": "ResourceId"
+            }
+          ]
+        },
+        {
+          "entityType": "Host",
+          "fieldMappings": [
+            {
+              "columnName": "HostName",
+              "identifier": "HostName"
+            },
+            {
+              "columnName": "DnsDomain",
+              "identifier": "DnsDomain"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IpAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2024-06-11T09:57:38.7960208Z",
+      "query": "SecurityAlert\n| extend Extprop = parse_json(ExtendedProperties)\n| mv-expand todynamic(Entities)\n| extend HostName = iff(isnotempty(tostring(Extprop[\"Compromised Host\"])), tolower(tostring(Extprop[\"Compromised Host\"])), tolower(tostring(parse_json(Entities).HostName)))\n| where isnotempty(HostName)\n| mv-expand todynamic(split(HostName, ','))\n| extend DnsDomain = iff(isnotempty(tostring(Extprop[\"Machine Domain\"])), tostring(Extprop[\"Machine Domain\"]), tostring(parse_json(Entities).DnsDomain))\n| extend UserName = iff(isnotempty(tostring(Extprop[\"User Name\"])), tostring(Extprop[\"User Name\"]), iff(tostring(parse_json(Entities).Type) == 'account', tostring(parse_json(Entities).Name), ''))\n| extend NTDomain = iff(isnotempty(tostring(Extprop[\"User Domain\"])), tostring(Extprop[\"User Domain\"]), tostring(parse_json(Entities).NTDomain))\n| extend IpAddress = iff(tostring(parse_json(Entities).Type) == 'ip', tostring(parse_json(Entities).Address), tostring(parse_json(Extprop).[\"IpAddress\"]))\n| summarize timestamp = arg_max(TimeGenerated, *) by AlertName, tostring(HostName)\n| project timestamp, AlertName, UserName, NTDomain, tostring(HostName), DnsDomain, IpAddress\n| join kind=inner\n(\nCoreAzureBackup\n| where State =~ \"Deleted\"\n| where OperationName =~ \"BackupItem\"\n| extend data = split(BackupItemUniqueId, \";\")\n| extend AzureLocation = data[0], VaultId=data[1], HostName=tolower(tostring(data[2])), DrivesBackedUp=data[3]\n| project timestamp = TimeGenerated, AzureLocation, VaultId, HostName, DrivesBackedUp, State, BackupItemUniqueId, _ResourceId, OperationName, BackupItemFriendlyName\n)\non HostName\n| project timestamp, AlertName, HostName, DnsDomain, UserName, NTDomain, _ResourceId, IpAddress, VaultId, AzureLocation, DrivesBackedUp, State, BackupItemUniqueId, OperationName, BackupItemFriendlyName\n",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [
+        "T1496"
+      ],
+      "templateVersion": "1.0.2",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

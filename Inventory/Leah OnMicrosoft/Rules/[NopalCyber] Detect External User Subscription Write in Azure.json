@@ -1,0 +1,77 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T11:50:25.412123Z",
+    "name": "[NopalCyber] Detect External User Subscription Write in Azure",
+    "native_rule_id": "9f12f4f6-6baf-48f1-93a8-e1baf0d6b5ea",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2900ee3d-0000-0d00-0000-68ece7810000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/9f12f4f6-6baf-48f1-93a8-e1baf0d6b5ea",
+    "kind": "Scheduled",
+    "name": "9f12f4f6-6baf-48f1-93a8-e1baf0d6b5ea",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This detection identifies successful subscription write operations in Azure performed by external users (#EXT# accounts), indicating possible unauthorized configuration changes or cross-tenant modifications requiring immediate investigation.",
+      "displayName": "[NopalCyber] Detect External User Subscription Write in Azure",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountCustomEntity",
+              "identifier": "Name"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPCustomEntity",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T11:50:25.412123Z",
+      "query": "AzureActivity\n| where OperationNameValue == \"Microsoft.Subscription/subscriptions/write\"\n| where ActivityStatus == \"Succeeded\"\n| extend CallerUpn = tostring(parse_json(Authorization).claims.upn)\n| where CallerUpn contains \"#EXT#\"\n| project\n    TimeGenerated,\n    OperationName,\n    OperationNameValue,\n    ActivityStatus,\n    Caller,\n    CallerUpn,\n    SubscriptionId,\n    _ResourceId,\n    ResourceGroup,\n    Resource,\n    CallerIpAddress,\n    CorrelationId,\n    TenantId\n| extend AccountCustomEntity = CallerUpn\n| extend IPCustomEntity = CallerIpAddress\n",
+      "queryFrequency": "PT5H",
+      "queryPeriod": "PT5H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "DefenseEvasion"
+      ],
+      "techniques": [
+        "T1666"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

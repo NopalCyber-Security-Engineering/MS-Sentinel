@@ -1,0 +1,94 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-08T09:01:39.5604242Z",
+    "name": "Subscription moved to another tenant",
+    "native_rule_id": "4a45e85e-c788-47a3-9df5-82152c3f63c0",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4c027bbf-0000-0d00-0000-690f06f40000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/4a45e85e-c788-47a3-9df5-82152c3f63c0",
+    "kind": "Scheduled",
+    "name": "4a45e85e-c788-47a3-9df5-82152c3f63c0",
+    "properties": {
+      "alertDetailsOverride": {
+        "alertDescriptionFormat": "The user {{Caller}} moved a subscription:\n\n{{Summary}}\n\nIf this was not expected, it may indicate a subscription hijacking event.\n",
+        "alertDisplayNameFormat": "Subscription {{SubscriptionId}} changed tenants\n"
+      },
+      "alertRuleTemplateName": "48c026d8-7f36-4a95-9568-6f1420d66e37",
+      "customDetails": {
+        "DestinationTenantId": "DestinationTenantId",
+        "SourceTenantId": "SourceTenantId"
+      },
+      "description": "This detection uses AzureActivity logs (Security category) to identify when a subscription is moved to another tenant.\nA threat actor may move a subscription into their own tenant to circumvent local resource deployment and logging policies.\nOnce moved, threat actors may deploy resources and perform malicious activities such as crypto mining.\nThis is a technique known as \"subscription hijacking\". More information can be found here: https://techcommunity.microsoft.com/t5/microsoft-365-defender-blog/hunt-for-compromised-azure-subscriptions-using-microsoft/ba-p/3607121",
+      "displayName": "Subscription moved to another tenant",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "AzureResource",
+          "fieldMappings": [
+            {
+              "columnName": "_ResourceId",
+              "identifier": "ResourceId"
+            }
+          ]
+        },
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "Caller",
+              "identifier": "FullName"
+            },
+            {
+              "columnName": "Name",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "UPNSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-08T09:01:39.5604242Z",
+      "query": "let queryFrequency = 5m;\nlet eventCapture = \"moved from tenant ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}) to tenant ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\";\nAzureActivity\n| where ingestion_time() > ago(queryFrequency)\n| where CategoryValue =~ \"Security\"\n| where OperationNameValue =~ \"Microsoft.Subscription/updateTenant/action\"\n| extend Properties_d = coalesce(parse_json(Properties), Properties_d)\n| where isnotempty(Properties_d)\n| extend Summary = tostring(Properties_d.message)\n| extend EventCapture = extract_all(eventCapture, Summary)\n| extend SourceTenantId = iff(isnotempty(EventCapture), EventCapture[0][0], \"\")\n| extend DestinationTenantId = iff(isnotempty(EventCapture), EventCapture[0][1], \"\")\n| extend \n    Name = split(Caller, \"@\", 0)[0],\n    UPNSuffix = split(Caller, \"@\", 1)[0]\n",
+      "queryFrequency": "PT5M",
+      "queryPeriod": "PT20M",
+      "severity": "Low",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Impact"
+      ],
+      "techniques": [
+        "T1496"
+      ],
+      "templateVersion": "1.0.1",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

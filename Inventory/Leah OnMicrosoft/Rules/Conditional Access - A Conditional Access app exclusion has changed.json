@@ -1,0 +1,73 @@
+{
+  "inventory": {
+    "classification": "template-derived",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-08T09:04:08.1267217Z",
+    "name": "Conditional Access - A Conditional Access app exclusion has changed",
+    "native_rule_id": "0b56784e-de56-4fce-adda-86713bc4e7b9",
+    "platform": "microsoft-sentinel",
+    "severity": "Low",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4c02eedb-0000-0d00-0000-690f07880000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/0b56784e-de56-4fce-adda-86713bc4e7b9",
+    "kind": "Scheduled",
+    "name": "0b56784e-de56-4fce-adda-86713bc4e7b9",
+    "properties": {
+      "alertRuleTemplateName": "0990a481-3bc8-4682-838c-313918dd858c",
+      "description": "A Conditional Access app exclusion has changed in Entra ID.",
+      "displayName": "Conditional Access - A Conditional Access app exclusion has changed",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "accountName",
+              "identifier": "Name"
+            },
+            {
+              "columnName": "upnSuffix",
+              "identifier": "UPNSuffix"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "AlertPerResult"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT1H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-08T09:04:08.1267217Z",
+      "query": "// A Conditional Access app exclusion has changed.\nAuditLogs\n| where OperationName in (\"Update conditional access policy\")\n| extend excludeApplicationsOld = extractjson(\"$.conditions.applications.excludeApplications\", tostring(TargetResources[0].modifiedProperties[0].oldValue))\n| extend excludeApplicationsNew = extractjson(\"$.conditions.applications.excludeApplications\", tostring(TargetResources[0].modifiedProperties[0].newValue))\n| where excludeApplicationsOld != excludeApplicationsNew\n| extend modifiedBy = tostring(InitiatedBy.user.userPrincipalName)\n| extend accountName = tostring(split(modifiedBy, \"@\")[0])\n| extend upnSuffix = tostring(split(modifiedBy, \"@\")[1])\n| project\n    TimeGenerated,\n    OperationName,\n    policy = TargetResources[0].displayName,\n    modifiedBy,\n    accountName,\n    upnSuffix,\n    result = Result,\n    excludeApplicationsOld,\n    excludeApplicationsNew\n| order by TimeGenerated desc\n\n",
+      "queryFrequency": "PT5M",
+      "queryPeriod": "PT5M",
+      "severity": "Low",
+      "suppressionDuration": "PT1H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CommandAndControl"
+      ],
+      "techniques": [
+        "T1071"
+      ],
+      "templateVersion": "1.0.1",
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

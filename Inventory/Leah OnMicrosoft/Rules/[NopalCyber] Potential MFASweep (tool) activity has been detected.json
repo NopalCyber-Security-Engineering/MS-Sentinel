@@ -1,0 +1,55 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-11-07T13:27:31.5228914Z",
+    "name": "[NopalCyber] Potential MFASweep (tool) activity has been detected.",
+    "native_rule_id": "8ffb89ec-bf1a-4760-beb4-b55edcc3bac9",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2e02f18c-0000-0d00-0000-690df3c40000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/8ffb89ec-bf1a-4760-beb4-b55edcc3bac9",
+    "kind": "Scheduled",
+    "name": "8ffb89ec-bf1a-4760-beb4-b55edcc3bac9",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule detects suspicious login behavior that may indicate the use of MFASweep, a tool attackers use to enumerate and test multifactor authentication (MFA) configurations in Entra ID (Azure AD).\n\nMFASweep works by trying multiple login attempts across different platforms and device types. This detection focuses on users signing in from unregistered devices with an unusually high number of distinct operating systems in a short timeframe.\n\nSuch behavior is abnormal for legitimate users and is a strong indicator of automated MFA probing or credential spraying with MFA checks.",
+      "displayName": "[NopalCyber] Potential MFASweep (tool) activity has been detected.",
+      "enabled": true,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-11-07T13:27:31.5228914Z",
+      "query": "let TotalThreshold = 5; // Set Treshold OperatingSystems. This can be changed depending on your environment\r\nSigninLogs\r\n| where TimeGenerated > ago(10m) // This time can be changed depending on your environment\r\n| extend operatingSystem = tostring(DeviceDetail.operatingSystem) // Retrieving OS\r\n| extend deviceId_ = tostring(DeviceDetail.deviceId) // Retrieving DeviceID\r\n| where isempty(deviceId_) //only look for unregistered devices\r\n| summarize\r\n            starttime = min(TimeGenerated),\r\n            stoptime = max(TimeGenerated),\r\n          OperationSystemsused = make_set(operatingSystem, 1000),\r\n          IPAddresses = make_set(IPAddress),\r\n          Applications = make_set(AppDisplayName)\r\n          by UserPrincipalName\r\n| extend CountOfOperationSystems = array_length(parse_json(OperationSystemsused))\r\n| where CountOfOperationSystems >= TotalThreshold",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CredentialAccess"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

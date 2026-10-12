@@ -1,0 +1,77 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-20T09:06:25.2623245Z",
+    "name": "[NopalCyber] Dormant User Update MFA and Logs In - UEBA",
+    "native_rule_id": "06726e57-cbb2-4a05-88fd-a44c62146615",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"3900189b-0000-0d00-0000-68f5fb910000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/06726e57-cbb2-4a05-88fd-a44c62146615",
+    "kind": "Scheduled",
+    "name": "06726e57-cbb2-4a05-88fd-a44c62146615",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule look for accounts that have not been successfully logged into recently who then add or update an MFA method before logging in.",
+      "displayName": "[NopalCyber] Dormant User Update MFA and Logs In - UEBA",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "Account",
+          "fieldMappings": [
+            {
+              "columnName": "AccountCustomEntity",
+              "identifier": "FullName"
+            }
+          ]
+        },
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPCustomEntity",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-20T09:06:25.2623245Z",
+      "query": " let starttime = todatetime('{{StartTimeISO}}');\r\n  let endtime = todatetime('{{EndTimeISO}}');\r\n  let lookback = endtime - 14d;\r\n  let active_users = (\r\n    BehaviorAnalytics\r\n    | extend dormant = tostring(UsersInsights.IsDormantAccount)\r\n    | where isempty(dormant)\r\n    | summarize by UserPrincipalName);\r\n  AuditLogs\r\n  | where TimeGenerated between(starttime..endtime)\r\n  // Get users where they added MFA\r\n  | where OperationName =~ \"User registered security info\"\r\n  | extend TargetUser = tolower(tostring(TargetResources[0].userPrincipalName))\r\n  | extend UserId = tostring(TargetResources[0].id)\r\n  // Check and see if this activity was from a user who is considered not active\r\n  | where UserId !in (active_users)\r\n  // Further reduce FP by just looking at users who have successfully logged in recently as well (avoiding hits for users adding MFA but not actually logging in)\r\n  | join kind=inner (SigninLogs | where TimeGenerated > ago(1d) | where ResultType == 0 | summarize max(TimeGenerated), make_set(IPAddress), make_set(UserAgent), make_set(LocationDetails) by UserPrincipalName, UserId\r\n  ) on UserId\r\n  | extend LogonLocation = set_LocationDetails[0], LogonUserAgent = set_UserAgent[0], LogonIP = set_IPAddress[0]\r\n  | project-rename MostRecentLogon = max_TimeGenerated\r\n  | project-reorder TimeGenerated, TargetUser, OperationName, ResultDescription, MostRecentLogon, LogonUserAgent, LogonLocation, LogonIP\r\n  | extend AccountCustomEntity = TargetUser, IPCustomEntity = LogonIP",
+      "queryFrequency": "PT5H",
+      "queryPeriod": "PT5H",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "Persistence"
+      ],
+      "techniques": [
+        "T1098"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

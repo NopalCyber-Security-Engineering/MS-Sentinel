@@ -1,0 +1,72 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "true",
+    "kind": "Scheduled",
+    "last_modified": "2025-10-13T09:34:02.7908744Z",
+    "name": "[NopalCyber] Nation State Actors via Microsoft Graph",
+    "native_rule_id": "084b49ef-e26b-481f-8975-e411d562386d",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"2800cdea-0000-0d00-0000-68ecc78b0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/084b49ef-e26b-481f-8975-e411d562386d",
+    "kind": "Scheduled",
+    "name": "084b49ef-e26b-481f-8975-e411d562386d",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "This rule identifies Microsoft Graph API activity originating from IP addresses flagged as Nation State indicators in Entra Sign-in logs.\n\nIt works in two stages:\n\nCollects all IP addresses tagged with the risk event type estsNationStateIP from SigninLogs (last 1 day).\n\nCorrelates those IPs with Microsoft Graph Activity Logs (same 90-day window).\n\nReturns the total count of Graph API operations from Nation State–linked IPs.\n\nThis detection helps SOC teams uncover nation-state threat actor activity targeting Microsoft Graph (e.g., mailbox access, data exfiltration, or lateral movement attempts",
+      "displayName": "[NopalCyber] Nation State Actors via Microsoft Graph",
+      "enabled": true,
+      "entityMappings": [
+        {
+          "entityType": "IP",
+          "fieldMappings": [
+            {
+              "columnName": "IPAddress",
+              "identifier": "Address"
+            }
+          ]
+        }
+      ],
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-10-13T09:34:02.7908744Z",
+      "query": "let NationStateIP =\r\n    SigninLogs\r\n    | where TimeGenerated > ago(1d)\r\n    | where RiskEventTypes_V2 contains \"estsNationStateIP\"\r\n    | distinct IPAddress;\r\nMicrosoftGraphActivityLogs\r\n| where TimeGenerated > ago(1d)\r\n| where IPAddress has_any(NationStateIP)\r\n| project TimeGenerated, Location, RequestMethod, ResponseStatusCode, IPAddress, UserAgent, RequestUri, AppId",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P1D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "CommandAndControl",
+        "PrivilegeEscalation",
+        "Reconnaissance"
+      ],
+      "techniques": [
+        "T1071",
+        "T1078",
+        "T1589"
+      ],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "inventory": {
+    "classification": "custom-unmanaged",
+    "client": "client-a",
+    "enabled_status": "false",
+    "kind": "Scheduled",
+    "last_modified": "2025-09-30T12:12:15.5664426Z",
+    "name": "[NopalCyber] Chrome Extension (CRX) - Malicious Extension Install Detection",
+    "native_rule_id": "824ec124-54d3-47a9-a3f4-81da432f7b8c",
+    "platform": "microsoft-sentinel",
+    "severity": "Medium",
+    "source": "Detection Platform inventory"
+  },
+  "native_rule": {
+    "etag": "\"4c0049d4-0000-0d00-0000-68dbc91f0000\"",
+    "id": "/subscriptions/50792f69-0d5b-4f7c-a9e1-5de4e63f535a/resourceGroups/rg-security/providers/Microsoft.OperationalInsights/workspaces/law-security/providers/Microsoft.SecurityInsights/alertRules/824ec124-54d3-47a9-a3f4-81da432f7b8c",
+    "kind": "Scheduled",
+    "name": "824ec124-54d3-47a9-a3f4-81da432f7b8c",
+    "properties": {
+      "alertRuleTemplateName": null,
+      "description": "Detects the creation of Chrome extension files (.crx) that match known malicious extension IDs. Malicious CRX files on endpoints can indicate an attacker dropped or installed a malicious extension (e.g., credential harvesters, redirectors, miners). The rule flags CRX creation with known bad IDs and requires available file hashes for further investigation.",
+      "displayName": "[NopalCyber] Chrome Extension (CRX) - Malicious Extension Install Detection",
+      "enabled": false,
+      "eventGroupingSettings": {
+        "aggregationKind": "SingleAlert"
+      },
+      "incidentConfiguration": {
+        "createIncident": true,
+        "groupingConfiguration": {
+          "enabled": false,
+          "groupByAlertDetails": [],
+          "groupByCustomDetails": [],
+          "groupByEntities": [],
+          "lookbackDuration": "PT5H",
+          "matchingMethod": "AllEntities",
+          "reopenClosedIncident": false
+        }
+      },
+      "lastModifiedUtc": "2025-09-30T12:12:15.5664426Z",
+      "query": "let MaliciousChromeExtensionID = dynamic([\r\n\"emedckhdnioeieppmeojgegjfkhdlaeo\",\"eaijffijbobmnonfhilihbejadplhddo\",\"lbneaaedflankmgmfbmaplggbmjjmbae\",\r\n\"hmiaoahjllhfgebflooeeefeiafpkfde\",\"pdkmmfdfggfpibdjbbghggcllhhainjo\",\"jiofmdifioeejeilfkpegipdjiopiekl\",\r\n\"acmfnomgphggonodopogfbmkneepfgnh\",\"hihblcmlaaademjlakdpicchbjnnnkbo\",\"ndlbedplllcgconngcnfmkadhokfaaln\",\r\n\"bibjgkidgpfbblifamdlkdlhgihmfohh\",\"pkgciiiancapdlpcbppfkmeaieppikkk\",\"epdjhgbipjpbbhoccdeipghoihibnfja\",\r\n\"bbdnohkpnbkdkmnkddobeafboooinpla\",\"befflofjcniongenjmbkgkoljhgliihe\",\"cedgndijpacnfbdggppddacngjfdkaca\",\r\n\"nnpnnpemnckcfdebeekibpiijlicmpom\",\"dpggmcodlahmljkhlmpgpdcffdaoccni\",\"cplhlgabfijoiabgkigdafklbhhdkahj\",\r\n\"egmennebgadmncfjafcemlecimkepcle\",\"mnhffkhmpnefgklngfmlndmkimimbphc\",\"oaikpkmjciadfpddlpjjdapglcihgdle\",\r\n\"fbmlcbhdmilaggedifpihjgkkmdgeljh\",\"kkodiihpgodmdankclfibbiphjkfdenh\",\"oeiomhmbaapihbilkfkhmlajkeegnjhe\",\r\n\"igbodamhgjohafcenbcljfegbipdfjpk\",\"bgejafhieobnfpjlpcjjggoboebonfcg\",\"llimhhconnjiflfimocjggfjdlmlhblm\",\r\n\"hodiladlefdpcbemnbbcpclbmknkiaem\",\"epikoohpebngmakjinphfiagogjcnddm\",\"pajkjnmeojmbapicmbpliphjmcekeaac\",\r\n\"ogbhbgkiojdollpjbhbamafmedkeockb\",\"eanofdhdfbcalhflpbdipkjjkoimeeod\",\"ekpkdmohpdnebfedjjfklhpefgpgaaji\",\r\n\"miglaibdlgminlepgeifekifakochlka\",\"mbindhfolmpijhodmgkloeeppmkhpmhc\",\"didhgeamncokiaegffipckhhcpnmlcbl\"\r\n]);\r\nDeviceFileEvents\r\n| where ActionType == \"FileCreated\"\r\n| where FileName endswith \".crx\"\r\n// FileName may be \"<extension_id>.crx\" or include the ID; check substrings against known IDs\r\n| where FileName has_any(MaliciousChromeExtensionID) or FolderPath has_any(\"Chrome\", \"Extensions\", \"Edge\")\r\n| where isnotempty(SHA1) or isnotempty(SHA256)\r\n| extend DetectionType = \"Malicious Chrome Extension (CRX) Created\"\r\n| project Timestamp,\r\n          DeviceId,\r\n          DeviceName,\r\n          FolderPath,\r\n          FileName,\r\n          SHA1,\r\n          SHA256,\r\n          InitiatingProcessFileName,\r\n          InitiatingProcessCommandLine,\r\n          ReportId,\r\n          DetectionType\r\n| order by Timestamp desc",
+      "queryFrequency": "P1D",
+      "queryPeriod": "P7D",
+      "severity": "Medium",
+      "suppressionDuration": "PT5H",
+      "suppressionEnabled": false,
+      "tactics": [
+        "InitialAccess",
+        "Persistence"
+      ],
+      "techniques": [],
+      "triggerOperator": "GreaterThan",
+      "triggerThreshold": 0
+    },
+    "type": "Microsoft.SecurityInsights/alertRules"
+  }
+}
