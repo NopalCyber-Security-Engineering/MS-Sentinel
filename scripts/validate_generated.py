@@ -5,9 +5,12 @@ import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-files = sorted(ROOT.glob("Clients/*/Solutions/*/Analytic Rules/*.json"))
+files = sorted([
+    *ROOT.glob("Clients/*/Solutions/*/Analytic Rules/*.json"),
+    *ROOT.glob("SentinelContent/Analytic Rules/*.json"),
+])
 if not files:
-    print("VALIDATION FAILED: no generated Sentinel ARM templates found")
+    print("VALIDATION FAILED: no Sentinel ARM templates found")
     raise SystemExit(1)
 
 errors = []
@@ -30,7 +33,7 @@ for path in files:
         errors.append(f"{path}: expected Scheduled rule")
     p = r.get("properties", {})
     if p.get("enabled") is not False:
-        errors.append(f"{path}: generated demo rule must be disabled")
+        errors.append(f"{path}: generated rule must be disabled")
     if not p.get("query"):
         errors.append(f"{path}: empty query")
 

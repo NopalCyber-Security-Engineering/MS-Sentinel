@@ -17,11 +17,11 @@ _build/
   build-manifest.json
 ```
 
-The checked-in `demo-client-01` ... `demo-client-05` roots are placeholders proving multi-workspace fan-out. They are not real customer mappings.
+Catalog client roots belong on `main`; deployment branches do not retain unrelated client content.
 
 ## `deploy/<client>` branches = live deployment boundaries
 
-Each client/workspace gets an isolated branch containing only that client's deployable `Solutions/...` tree.
+Each client/workspace gets an isolated branch containing only that client's deployable `SentinelContent/Analytic Rules/` content. `deploy/client-a` is the Leah OnMicrosoft deployment boundary.
 
 **Connect Microsoft Sentinel to the relevant `deploy/<client>` branch, not to `main`.**
 

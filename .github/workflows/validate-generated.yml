@@ -2,9 +2,12 @@ name: Validate Generated Sentinel Content
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'deploy/**'
     paths:
       - 'Clients/**'
+      - 'SentinelContent/**'
       - '_build/**'
       - 'scripts/validate_generated.py'
       - '.github/workflows/validate-generated.yml'
