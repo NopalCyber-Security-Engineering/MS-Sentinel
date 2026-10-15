@@ -1,30 +1,27 @@
 # MS-Sentinel
 
-Generated Microsoft Sentinel deployment repository.
+Microsoft Sentinel native inventory and Git-backed deployment repository.
 
-**Do not hand-edit generated rule JSON.** Edit the source Sigma rule or Sentinel platform configuration in `Sigma-Rules`, then rebuild/publish.
+**Do not hand-edit managed rule JSON.** Inventory snapshots and deployment artifacts are published by Detection-Platform.
 
-## `main` branch = generated catalog
+## `main` branch = native inventory
 
 ```text
-Clients/
-  <client-alias>/
-    Solutions/
-      <Solution>/
-        Analytic Rules/
-          <generated ARM template>.json
-_build/
-  build-manifest.json
+Inventory/
+  Leah OnMicrosoft/
+    manifest.json
+    Rules/
+      <native rule>.json
 ```
 
-The checked-in `demo-client-01` ... `demo-client-05` roots are placeholders proving multi-workspace fan-out. They are not real customer mappings.
+The inventory is a read-back snapshot for inspection and source-control persistence. It is not a deployment tree, and Microsoft Sentinel must not be connected to `main`.
 
 ## `deploy/<client>` branches = live deployment boundaries
 
-Each client/workspace gets an isolated branch containing only that client's deployable `Solutions/...` tree.
+Each client/workspace gets an isolated branch containing only that client's deployable `SentinelContent/Analytic Rules/` content. `deploy/client-a` is the Leah OnMicrosoft deployment boundary.
 
 **Connect Microsoft Sentinel to the relevant `deploy/<client>` branch, not to `main`.**
 
-Every generated analytics rule is disabled by default.
+Managed deployment artifacts are disabled by default.
 
 See `docs/REPOSITORY_CONNECTIONS.md`.

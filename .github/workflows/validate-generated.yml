@@ -1,11 +1,13 @@
-name: Validate Generated Sentinel Content
+name: Validate Sentinel Repository Content
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'deploy/**'
     paths:
-      - 'Clients/**'
-      - '_build/**'
+      - 'Inventory/**'
+      - 'SentinelContent/**'
       - 'scripts/validate_generated.py'
       - '.github/workflows/validate-generated.yml'
   workflow_dispatch:
@@ -21,5 +23,5 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-      - name: Validate generated ARM content
+      - name: Validate inventory and deployment content
         run: python scripts/validate_generated.py
